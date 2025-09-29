@@ -1,7 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FaSearch, FaTimes, FaFilter, FaPaw, FaMapMarkerAlt } from 'react-icons/fa';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+
+const mockSuggestions = [
+  { type: 'breed', value: 'Golden Retriever', count: 15 },
+  { type: 'breed', value: 'Persian Cat', count: 8 },
+  { type: 'breed', value: 'German Shepherd', count: 12 },
+  { type: 'species', value: 'Dog', count: 45 },
+  { type: 'species', value: 'Cat', count: 32 },
+];
 
 const SearchComponent = ({ onSearch, onFilter, initialFilters = {} }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,13 +37,7 @@ const SearchComponent = ({ onSearch, onFilter, initialFilters = {} }) => {
     'Indoor Cats'
   ];
 
-  const mockSuggestions = [
-    { type: 'breed', value: 'Golden Retriever', count: 15 },
-    { type: 'breed', value: 'Persian Cat', count: 8 },
-    { type: 'breed', value: 'German Shepherd', count: 12 },
-    { type: 'species', value: 'Dog', count: 45 },
-    { type: 'species', value: 'Cat', count: 32 },
-  ];
+
 
   useEffect(() => {
     if (searchQuery) {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Thumbs, FreeMode, Autoplay } from 'swiper/modules';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FaExpand, FaTimes, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { Expand, X, ChevronLeft, ChevronRight } from 'lucide-react';
 

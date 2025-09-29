@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom styles for PawHaven */
 .line-clamp-2 {
@@ -9,4 +7,82 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Custom animations for pet-themed dashboard */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(-1deg);
+  }
+}
+
+@keyframes paw-print {
+  0%, 50%, 100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  25% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.2;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes heart-beat {
+  0%, 50%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.1);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+}
+
+.float-animation {
+  animation: float 4s ease-in-out infinite;
+}
+
+.paw-animation {
+  animation: paw-print 3s ease-in-out infinite;
+}
+
+.heart-beat-animation {
+  animation: heart-beat 2s ease-in-out infinite;
+}
+
+/* Ensure colors are working */
+.text-pink-600 {
+  color: #ec4899 !important;
+}
+
+.text-purple-600 {
+  color: #9333ea !important;
+}
+
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important;
+}
+
+.from-pink-500 {
+  --tw-gradient-from: #ec4899 !important;
+  --tw-gradient-to: rgba(236, 72, 153, 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-purple-600 {
+  --tw-gradient-to: #9333ea !important;
 }

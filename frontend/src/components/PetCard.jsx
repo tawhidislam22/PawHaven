@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaHeart, FaCalendar, FaMapMarkerAlt, FaEye, FaPaw, FaStar } from 'react-icons/fa';
 
 const PetCard = ({ pet, onAddToWatchlist, isInWatchlist = false }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const getStatusColor = (status) => {

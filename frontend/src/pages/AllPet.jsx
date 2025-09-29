@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Filter, Search, SlidersHorizontal, Grid, List, ChevronDown } from 'lucide-react';
 import { dummyPets } from '../data/dummyData';
 import InteractivePetCard from '../components/InteractivePetCard';

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight, FaHeart, FaUsers, FaAward, FaChartLine, FaPaw, FaHome, FaShieldAlt, FaPlay } from 'react-icons/fa';
 import { ArrowRight, Heart, Users, Award, BarChart3, Home, Shield, Play } from 'lucide-react';
-import { dummyPets, testimonials, stats } from '../data/dummyData';
+import { dummyPets, testimonials, stats } from '../../data/dummyData';
 
 const HomePage = () => {
   const [featuredPets] = useState(dummyPets.slice(0, 8));

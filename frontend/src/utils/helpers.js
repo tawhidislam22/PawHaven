@@ -61,7 +61,7 @@ export const formatDate = (date) => {
   try {
     const dateObj = new Date(date);
     return format(dateObj, 'MMM dd, yyyy');
-  } catch (error) {
+  } catch {
     return date;
   }
 };
@@ -72,7 +72,7 @@ export const formatRelativeTime = (date) => {
   try {
     const dateObj = new Date(date);
     return formatDistanceToNow(dateObj, { addSuffix: true });
-  } catch (error) {
+  } catch {
     return date;
   }
 };
@@ -102,8 +102,8 @@ export const validateEmail = (email) => {
 };
 
 export const validatePhone = (phone) => {
-  const re = /^[\+]?[1-9][\d]{0,15}$/;
-  return re.test(phone.replace(/[\s\-\(\)]/g, ''));
+  const re = /^[+]?[1-9][\d]{0,15}$/;
+  return re.test(phone.replace(/[\s\-()]/g, ''));
 };
 
 export const debounce = (func, wait) => {

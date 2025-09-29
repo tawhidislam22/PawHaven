@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { FaUser, FaEnvelope, FaCalendar, FaPaw, FaHeart, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../Providers/AuthProvider';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 const ProfilePage = () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FaHeart, FaEye, FaPaw, FaStar, FaShare, FaCalendar, FaMapMarkerAlt } from 'react-icons/fa';
 import { Heart, Eye, Share2, Calendar, MapPin } from 'lucide-react';
@@ -14,7 +14,6 @@ const InteractivePetCard = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const { ref, inView } = useInView({
     threshold: 0.1,
     triggerOnce: true
