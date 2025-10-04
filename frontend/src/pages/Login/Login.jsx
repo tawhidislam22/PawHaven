@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../Providers/AuthProvider';
+<<<<<<< HEAD
 import { userAPI } from '../../services/api';
+=======
+>>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
 import { FaGoogle, FaEye, FaEyeSlash, FaPaw, FaHeart, FaEnvelope, FaLock } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -23,6 +26,7 @@ const Login = () => {
         e.preventDefault();
         setLoading(true);
         try {
+<<<<<<< HEAD
             // Try backend API login first
             try {
                 const response = await userAPI.login({ username: email, password });
@@ -47,6 +51,11 @@ const Login = () => {
             } else {
                 throw new Error('No authentication method available');
             }
+=======
+            await signIn(email, password);
+            toast.success('Welcome back to PawHaven! 🐾');
+            navigate(from, { replace: true });
+>>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
         } catch (error) {
             console.error('Login error:', error);
             toast.error('Login failed. Please check your credentials.');

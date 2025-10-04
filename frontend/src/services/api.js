@@ -31,6 +31,7 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+<<<<<<< HEAD
     // Handle different types of errors
     if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
       console.error('Backend server is not running or unreachable');
@@ -44,6 +45,12 @@ api.interceptors.response.use(
       error.message = error.response.data?.message || 'Invalid data provided';
     } else if (error.response?.status === 500) {
       error.message = 'Server error occurred. Please try again later.';
+=======
+    if (error.response?.status === 401) {
+      localStorage.removeItem('pawhaven_token');
+      localStorage.removeItem('pawhaven_user');
+      window.location.href = '/login';
+>>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
     }
     return Promise.reject(error);
   }
@@ -97,6 +104,7 @@ export const petAPI = {
   },
 };
 
+<<<<<<< HEAD
 // User API endpoints - Complete CRUD Operations
 export const userAPI = {
   // Authentication
@@ -129,6 +137,49 @@ export const userAPI = {
   
   // User Applications
   getApplications: () => api.get('/users/applications'),
+=======
+// User API endpoints
+export const userAPI = {
+  // Register new user
+  register: (userData) => {
+    return api.post('/auth/register', userData);
+  },
+
+  // Login user
+  login: (credentials) => {
+    return api.post('/auth/login', credentials);
+  },
+
+  // Get current user profile
+  getProfile: () => {
+    return api.get('/users/profile');
+  },
+
+  // Update user profile
+  updateProfile: (userData) => {
+    return api.put('/users/profile', userData);
+  },
+
+  // Get user's watchlist
+  getWatchlist: () => {
+    return api.get('/users/watchlist');
+  },
+
+  // Add pet to watchlist
+  addToWatchlist: (petId) => {
+    return api.post('/users/watchlist', { petId });
+  },
+
+  // Remove pet from watchlist
+  removeFromWatchlist: (petId) => {
+    return api.delete(`/users/watchlist/${petId}`);
+  },
+
+  // Get user's adoption applications
+  getApplications: () => {
+    return api.get('/users/applications');
+  },
+>>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
 };
 
 // Adoption API endpoints
