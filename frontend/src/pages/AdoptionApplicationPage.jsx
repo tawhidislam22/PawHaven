@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FaArrowLeft, FaHeart, FaPaw, FaHome, FaCheck } from 'react-icons/fa';
+import AdoptionForm from '../components/AdoptionForm';
+import { dummyPets } from '../data/dummyData';
+
+const AdoptionApplicationPage = () => {
+    const { id } = useParams();
+    const [pet] = useState(dummyPets.find(p => p.id === parseInt(id)));
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    if (!pet) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-pink-100"
+                >
+                    <div className="text-6xl mb-4">🐾</div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Pet Not Found</h1>
+                    <p className="text-gray-600 mb-6">The pet you're looking for doesn't exist or may have been adopted.</p>
+                    <Link 
+                        to="/adopt" 
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                    >
+                        <FaArrowLeft className="mr-2" />
+                        Back to Adopt Page
+                    </Link>
+                </motion.div>
+            </div>
+        );
+    }
+
+    // Check if pet is available for adoption
+    if (pet.status.toLowerCase() !== 'available') {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-pink-100 max-w-md"
+                >
+                    <div className="text-6xl mb-4">😔</div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-4">Not Available for Adoption</h1>
+                    <p className="text-gray-600 mb-2">
+                        <strong>{pet.name}</strong> is currently <span className="capitalize">{pet.status.toLowerCase()}</span>
+                    </p>
+                    <p className="text-gray-600 mb-6">Please check back later or browse other available pets.</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Link 
+                            to={`/pet/${pet.id}`}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
+                        >
+                            View {pet.name}
+                        </Link>
+                        <Link 
+                            to="/adopt" 
+                            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                        >
+                            Browse Other Pets
+                        </Link>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
+    const handleFormSubmit = async (formData) => {
+        setIsLoading(true);
+        
+        // Simulate API call
+        try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            console.log('Adoption application submitted:', {
+                petId: pet.id,
+                petName: pet.name,
+                applicantData: formData
+            });
+            
+            setIsSubmitted(true);
+        } catch (error) {
+            console.error('Error submitting application:', error);
+            alert('There was an error submitting your application. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isSubmitted) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-pink-100 max-w-lg"
+                >
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="w-20 h-20 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6"
+                    >
+                        <FaCheck className="text-white text-3xl" />
+                    </motion.div>
+                    
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent mb-4">
+                        Application Submitted Successfully! 🎉
+                    </h1>
+                    
+                    <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 mb-6">
+                        <p className="text-gray-800 font-semibold mb-2">
+                            Thank you for your interest in adopting <strong>{pet.name}</strong>!
+                        </p>
+                        <p className="text-gray-600 text-sm">
+                            Our adoption team will review your application and contact you within 2-3 business days.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4 text-left bg-amber-50 rounded-xl p-4 mb-6">
+                        <h3 className="font-bold text-gray-800 flex items-center">
+                            <FaHeart className="text-red-500 mr-2" />
+                            Next Steps:
+                        </h3>
+                        <ul className="space-y-2 text-sm text-gray-600">
+                            <li className="flex items-start">
+                                <span className="text-green-500 mr-2">•</span>
+                                Application review (1-2 days)
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-500 mr-2">•</span>
+                                Reference check with your veterinarian
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-500 mr-2">•</span>
+                                Home visit or virtual meeting
+                            </li>
+                            <li className="flex items-start">
+                                <span className="text-green-500 mr-2">•</span>
+                                Meet and greet with {pet.name}
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Link 
+                            to={`/pet/${pet.id}`}
+                            className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
+                        >
+                            <FaPaw className="mr-2" />
+                            View {pet.name}
+                        </Link>
+                        <Link 
+                            to="/adopt" 
+                            className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                        >
+                            <FaHome className="mr-2" />
+                            Browse More Pets
+                        </Link>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50">
+            {/* Header */}
+            <div className="bg-white/80 backdrop-blur-lg border-b border-pink-100 sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex items-center justify-between">
+                        <Link 
+                            to={`/pet/${pet.id}`}
+                            className="flex items-center text-gray-600 hover:text-purple-600 transition-colors duration-300"
+                        >
+                            <FaArrowLeft className="mr-2" />
+                            Back to {pet.name}'s Profile
+                        </Link>
+                        <div className="text-sm text-gray-500">
+                            Step-by-step adoption application
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Pet Info Header */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+            >
+                <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-pink-100 mb-8">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="relative">
+                            <img
+                                src={pet.image}
+                                alt={pet.name}
+                                className="w-24 h-24 rounded-full object-cover border-4 border-pink-200"
+                            />
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center">
+                                <FaHeart className="text-white text-sm" />
+                            </div>
+                        </div>
+                        <div className="text-center md:text-left">
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-amber-600 bg-clip-text text-transparent mb-2">
+                                Adopt {pet.name}
+                            </h1>
+                            <p className="text-gray-600 mb-2">
+                                {pet.breed} • {Math.floor(pet.age / 12)} years old • {pet.location}
+                            </p>
+                            <div className="flex items-center justify-center md:justify-start gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                    Available for Adoption
+                                </span>
+                                <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                                    {pet.gender}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Adoption Form */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                    <AdoptionForm 
+                        pet={pet}
+                        onSubmit={handleFormSubmit}
+                        isLoading={isLoading}
+                    />
+                </motion.div>
+            </motion.div>
+        </div>
+    );
+};
+
+export default AdoptionApplicationPage;

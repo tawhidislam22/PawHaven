@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "BackendApplication",
+            "request": "launch",
+            "mainClass": "com.pawhaven.backend.BackendApplication",
+            "projectName": "pawhaven-backend"
+        },
+        {
+            "type": "java",
+            "name": "Launch PawHaven Backend",
+            "request": "launch",
+            "mainClass": "com.pawhaven.backend.BackendApplication",
+            "projectName": "Pet-info",
+            "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "SPRING_PROFILES_ACTIVE": "dev"
+            },
+            "args": [],
+            "vmArgs": [
+                "-Dspring.datasource.url=jdbc:mysql://localhost:3306/pawhaven_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true",
+                "-Dspring.datasource.username=root",
+                "-Dspring.datasource.password=password"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
