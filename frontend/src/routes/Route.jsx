@@ -9,7 +9,6 @@ import DonatePage from '../pages/DonatePage';
 import ProfilePage from '../pages/ProfilePage';
 import AccessoriesPage from '../pages/AccessoriesPage';
 import ProductDetailPage from '../pages/ProductDetailPage';
-<<<<<<< HEAD
 import PetDetailPage from '../pages/PetDetailPage';
 import AdoptionApplicationPage from '../pages/AdoptionApplicationPage';
 import PrivateRoute from './PrivateRoute';
@@ -17,15 +16,8 @@ import ContactPage from '../pages/ContactPage';
 import Register from '../pages/Register/Register';
 import Login from '../pages/Login/Login';
 import AboutPage from '../pages/AboutPage';
-// Dashboard Pages - Admin
-=======
-import PrivateRoute from './PrivateRoute';
-
-import Register from '../pages/Register/Register';
-import Login from '../pages/Login/Login';
 
 // Dashboard Pages
->>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
 import PetManagement from '../pages/dashboard/PetManagement';
 import UserManagement from '../pages/dashboard/UserManagement';
 import AdoptionApplications from '../pages/dashboard/AdoptionApplications';
@@ -36,7 +28,6 @@ import BabysittingManagement from '../pages/dashboard/BabysittingManagement';
 import FeedbackManagement from '../pages/dashboard/FeedbackManagement';
 import ReportsManagement from '../pages/dashboard/ReportsManagement';
 
-<<<<<<< HEAD
 // Dashboard Pages - User
 import MyAdoptions from '../pages/dashboard/MyAdoptions';
 import MyPayments from '../pages/dashboard/MyPayments';
@@ -45,8 +36,6 @@ import MyBabysitting from '../pages/dashboard/MyBabysitting';
 import Payment from '../pages/dashboard/Payment';
 import PaymentHistory from '../pages/dashboard/PaymentHistory';
 
-=======
->>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
 
 const router = createBrowserRouter([
     {
@@ -71,13 +60,10 @@ const router = createBrowserRouter([
                 element: <AdoptPage />
             },
             {
-<<<<<<< HEAD
                 path: '/adopt/:id/apply',
                 element: <AdoptionApplicationPage />
             },
             {
-=======
->>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
                 path:'/donate',
                 element: <DonatePage />
             },
@@ -88,7 +74,6 @@ const router = createBrowserRouter([
             {
                 path: '/accessories/:id',
                 element: <ProductDetailPage />
-<<<<<<< HEAD
             },
             {
                 path: '/pet/:id',
@@ -101,8 +86,6 @@ const router = createBrowserRouter([
             {
                 path: '/contact',
                 element: <ContactPage />
-=======
->>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
             }
         ]
     },
@@ -118,7 +101,6 @@ const router = createBrowserRouter([
                 path: 'profile',
                 element: <ProfilePage />
             },
-<<<<<<< HEAD
             // User Dashboard Routes
             {
                 path: 'my-adoptions',
@@ -145,9 +127,7 @@ const router = createBrowserRouter([
                 element: <PaymentHistory />
             },
             // Admin Entity Management Routes
-=======
             // Entity Management Routes
->>>>>>> c295e9782fa9018f294df1c9d8162d82614294c4
             {
                 path: 'pets',
                 element: <PetManagement />

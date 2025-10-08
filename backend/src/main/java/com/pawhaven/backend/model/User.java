@@ -1,13 +1,14 @@
 package com.pawhaven.backend.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -15,23 +16,18 @@ public class User {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "u_id")
     private Long id;
     
     @NotBlank(message = "Name is required")
     @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
     
     @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    @Column(unique = true, nullable = false)
+    @Email(message = "Invalid email format")
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
-    
-    @Column(name = "photo")
-    private String photo;
-    
-    @Column(name = "address")
-    private String address;
     
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
@@ -39,10 +35,18 @@ public class User {
     private String password;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role = Role.USER;
+    @NotNull(message = "Role is required")
+    @Column(nullable = false, length = 20)
+    private UserRole role = UserRole.USER;
     
-    @Column(name = "is_active")
+    
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+    
+    @Column(name = "profile_image", length = 500)
+    private String profileImage;
+    
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
     
     @CreationTimestamp
@@ -53,19 +57,41 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    // Constructors
-    public User() {}
+    // Relationships
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<AdoptionApplication> adoptionApplications = new ArrayList<>();
     
-    public User(String name, String email, String password,String photo,String address,boolean isActive) {
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Feedback> feedbacks = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Notification> notifications = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Payment> payments = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Report> reports = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Babysitting> babysittings = new ArrayList<>();
+    
+    // Constructors
+    public User() {
+    }
+    
+    public User(String name, String email, String password, UserRole role) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.role = Role.USER;
-        this.photo=photo;
-        this.address=address;
-        this.isActive=isActive;
+        this.role = role;
     }
-    
     
     // Getters and Setters
     public Long getId() {
@@ -92,14 +118,6 @@ public class User {
         this.email = email;
     }
     
-    public String getPhoto() {
-        return photo;
-    }
-    
-    public void setPhoto(String photo) {
-        this.photo = photo;
-    }
-    
     public String getPassword() {
         return password;
     }
@@ -108,7 +126,15 @@ public class User {
         this.password = password;
     }
     
-
+    public UserRole getRole() {
+        return role;
+    }
+    
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+    
+    
     public String getAddress() {
         return address;
     }
@@ -117,12 +143,12 @@ public class User {
         this.address = address;
     }
     
-    public Role getRole() {
-        return role;
+    public String getProfileImage() {
+        return profileImage;
     }
     
-    public void setRole(Role role) {
-        this.role = role;
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
     
     public Boolean getIsActive() {
@@ -149,8 +175,52 @@ public class User {
         this.updatedAt = updatedAt;
     }
     
-    public String getDisplayName() {
-        return name;
+    public List<AdoptionApplication> getAdoptionApplications() {
+        return adoptionApplications;
+    }
+    
+    public void setAdoptionApplications(List<AdoptionApplication> adoptionApplications) {
+        this.adoptionApplications = adoptionApplications;
+    }
+    
+    public List<Feedback> getFeedbacks() {
+        return feedbacks;
+    }
+    
+    public void setFeedbacks(List<Feedback> feedbacks) {
+        this.feedbacks = feedbacks;
+    }
+    
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+    
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
+    }
+    
+    public List<Payment> getPayments() {
+        return payments;
+    }
+    
+    public void setPayments(List<Payment> payments) {
+        this.payments = payments;
+    }
+    
+    public List<Report> getReports() {
+        return reports;
+    }
+    
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
+    }
+    
+    public List<Babysitting> getBabysittings() {
+        return babysittings;
+    }
+    
+    public void setBabysittings(List<Babysitting> babysittings) {
+        this.babysittings = babysittings;
     }
     
     @Override
@@ -160,13 +230,10 @@ public class User {
                 ", name='" + name + '\'' +
                 ", email='" + email + '\'' +
                 ", role=" + role +
+                ", address='" + address + '\'' +
+                ", profileImage='" + profileImage + '\'' +
                 ", isActive=" + isActive +
-                ", photo=" + photo +
+                ", createdAt=" + createdAt +
                 '}';
-    }
-    
-    // Role enum
-    public enum Role {
-        USER, ADMIN, EMPLOYEE
     }
 }

@@ -7,167 +7,162 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/accessories")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/accessories")
+@CrossOrigin(origins = "http://localhost:5173")
 public class AccessoryController {
     
     @Autowired
     private AccessoryService accessoryService;
     
-    // CREATE - Add new accessory
-    @PostMapping
-    public ResponseEntity<Accessory> createAccessory(@Valid @RequestBody Accessory accessory) {
-        try {
-            Accessory savedAccessory = accessoryService.saveAccessory(accessory);
-            return new ResponseEntity<>(savedAccessory, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // READ - Get all accessories
+    // Get all accessories
     @GetMapping
     public ResponseEntity<List<Accessory>> getAllAccessories() {
-        try {
-            List<Accessory> accessories = accessoryService.getAllAccessories();
-            if (accessories.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return ResponseEntity.ok(accessoryService.getAllAccessories());
     }
     
-    // READ - Get accessory by ID
+    // Get active accessories
+    @GetMapping("/active")
+    public ResponseEntity<List<Accessory>> getActiveAccessories() {
+        return ResponseEntity.ok(accessoryService.getActiveAccessories());
+    }
+    
+    // Get accessories in stock
+    @GetMapping("/in-stock")
+    public ResponseEntity<List<Accessory>> getAccessoriesInStock() {
+        return ResponseEntity.ok(accessoryService.getAccessoriesInStock());
+    }
+    
+    // Get recent accessories
+    @GetMapping("/recent")
+    public ResponseEntity<List<Accessory>> getRecentAccessories() {
+        return ResponseEntity.ok(accessoryService.getRecentAccessories());
+    }
+    
+    // Get accessory by ID
     @GetMapping("/{id}")
     public ResponseEntity<Accessory> getAccessoryById(@PathVariable Long id) {
-        try {
-            Optional<Accessory> accessory = accessoryService.getAccessoryById(id);
-            if (accessory.isPresent()) {
-                return new ResponseEntity<>(accessory.get(), HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return accessoryService.getAccessoryById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     
-    // UPDATE - Update accessory
+    // Get accessories by type
+    @GetMapping("/type/{type}")
+    public ResponseEntity<List<Accessory>> getAccessoriesByType(@PathVariable String type) {
+        return ResponseEntity.ok(accessoryService.getAccessoriesByType(type));
+    }
+    
+    // Get active accessories by type
+    @GetMapping("/type/{type}/active")
+    public ResponseEntity<List<Accessory>> getActiveAccessoriesByType(@PathVariable String type) {
+        return ResponseEntity.ok(accessoryService.getActiveAccessoriesByType(type));
+    }
+    
+    // Search accessories by name
+    @GetMapping("/search/name")
+    public ResponseEntity<List<Accessory>> searchAccessoriesByName(@RequestParam String name) {
+        return ResponseEntity.ok(accessoryService.searchAccessoriesByName(name));
+    }
+    
+    // Search accessories by brand
+    @GetMapping("/search/brand")
+    public ResponseEntity<List<Accessory>> searchAccessoriesByBrand(@RequestParam String brand) {
+        return ResponseEntity.ok(accessoryService.searchAccessoriesByBrand(brand));
+    }
+    
+    // Get accessories by price range
+    @GetMapping("/price-range")
+    public ResponseEntity<List<Accessory>> getAccessoriesByPriceRange(
+            @RequestParam BigDecimal minPrice,
+            @RequestParam BigDecimal maxPrice) {
+        return ResponseEntity.ok(accessoryService.getAccessoriesByPriceRange(minPrice, maxPrice));
+    }
+    
+    // Create accessory
+    @PostMapping
+    public ResponseEntity<Accessory> createAccessory(@RequestBody Accessory accessory) {
+        Accessory savedAccessory = accessoryService.saveAccessory(accessory);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedAccessory);
+    }
+    
+    // Update accessory
     @PutMapping("/{id}")
-    public ResponseEntity<Accessory> updateAccessory(@PathVariable Long id, @Valid @RequestBody Accessory accessory) {
+    public ResponseEntity<Accessory> updateAccessory(@PathVariable Long id, @RequestBody Accessory accessory) {
         try {
             Accessory updatedAccessory = accessoryService.updateAccessory(id, accessory);
-            if (updatedAccessory != null) {
-                return new ResponseEntity<>(updatedAccessory, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.ok(updatedAccessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
     
-    // DELETE - Delete accessory
+    // Update stock quantity
+    @PutMapping("/{id}/stock")
+    public ResponseEntity<Accessory> updateStockQuantity(@PathVariable Long id, @RequestBody Map<String, Integer> stock) {
+        try {
+            Integer quantity = stock.get("quantity");
+            Accessory accessory = accessoryService.updateStockQuantity(id, quantity);
+            return ResponseEntity.ok(accessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Decrease stock
+    @PutMapping("/{id}/stock/decrease")
+    public ResponseEntity<Accessory> decreaseStock(@PathVariable Long id, @RequestBody Map<String, Integer> stock) {
+        try {
+            Integer quantity = stock.get("quantity");
+            Accessory accessory = accessoryService.decreaseStock(id, quantity);
+            return ResponseEntity.ok(accessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Increase stock
+    @PutMapping("/{id}/stock/increase")
+    public ResponseEntity<Accessory> increaseStock(@PathVariable Long id, @RequestBody Map<String, Integer> stock) {
+        try {
+            Integer quantity = stock.get("quantity");
+            Accessory accessory = accessoryService.increaseStock(id, quantity);
+            return ResponseEntity.ok(accessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Activate accessory
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<Accessory> activateAccessory(@PathVariable Long id) {
+        try {
+            Accessory accessory = accessoryService.activateAccessory(id);
+            return ResponseEntity.ok(accessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Deactivate accessory
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<Accessory> deactivateAccessory(@PathVariable Long id) {
+        try {
+            Accessory accessory = accessoryService.deactivateAccessory(id);
+            return ResponseEntity.ok(accessory);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Delete accessory
     @DeleteMapping("/{id}")
-    public ResponseEntity<HttpStatus> deleteAccessory(@PathVariable Long id) {
-        try {
-            boolean deleted = accessoryService.deleteAccessory(id);
-            if (deleted) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Get accessories by category
-    @GetMapping("/category/{category}")
-    public ResponseEntity<List<Accessory>> getAccessoriesByCategory(@PathVariable String category) {
-        try {
-            List<Accessory> accessories = accessoryService.getAccessoriesByCategory(category);
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Search accessories by name
-    @GetMapping("/search")
-    public ResponseEntity<List<Accessory>> searchAccessoriesByName(@RequestParam String name) {
-        try {
-            List<Accessory> accessories = accessoryService.searchAccessoriesByName(name);
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Get available accessories
-    @GetMapping("/available")
-    public ResponseEntity<List<Accessory>> getAvailableAccessories() {
-        try {
-            List<Accessory> accessories = accessoryService.getAvailableAccessories();
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Get accessories by brand
-    @GetMapping("/brand")
-    public ResponseEntity<List<Accessory>> getAccessoriesByBrand(@RequestParam String brand) {
-        try {
-            List<Accessory> accessories = accessoryService.getAccessoriesByBrand(brand);
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Get accessories by price range
-    @GetMapping("/price-range")
-    public ResponseEntity<List<Accessory>> getAccessoriesByPriceRange(@RequestParam BigDecimal minPrice, @RequestParam BigDecimal maxPrice) {
-        try {
-            List<Accessory> accessories = accessoryService.getAccessoriesByPriceRange(minPrice, maxPrice);
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // SEARCH - Get popular accessories
-    @GetMapping("/popular")
-    public ResponseEntity<List<Accessory>> getPopularAccessories() {
-        try {
-            List<Accessory> accessories = accessoryService.getPopularAccessories();
-            return new ResponseEntity<>(accessories, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-    
-    // UPDATE - Update stock
-    @PatchMapping("/{id}/stock")
-    public ResponseEntity<Accessory> updateStock(@PathVariable Long id, @RequestParam Integer stock) {
-        try {
-            Accessory updatedAccessory = accessoryService.updateStock(id, stock);
-            if (updatedAccessory != null) {
-                return new ResponseEntity<>(updatedAccessory, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<Void> deleteAccessory(@PathVariable Long id) {
+        accessoryService.deleteAccessory(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,14 +1,17 @@
 package com.pawhaven.backend.service;
 
 import com.pawhaven.backend.model.Pet;
+import com.pawhaven.backend.model.Shelter;
 import com.pawhaven.backend.repository.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class PetService {
     
     @Autowired
@@ -19,64 +22,19 @@ public class PetService {
         return petRepository.save(pet);
     }
     
-    // Get all pets
-    public List<Pet> getAllPets() {
-        return petRepository.findAll();
-    }
-    
     // Get pet by ID
     public Optional<Pet> getPetById(Long id) {
         return petRepository.findById(id);
     }
     
-    // Update pet
-    public Pet updatePet(Long id, Pet petDetails) {
-        Optional<Pet> optionalPet = petRepository.findById(id);
-        if (optionalPet.isPresent()) {
-            Pet pet = optionalPet.get();
-            pet.setName(petDetails.getName());
-            pet.setPetType(petDetails.getPetType());
-            pet.setBreed(petDetails.getBreed());
-            pet.setAge(petDetails.getAge());
-            pet.setGender(petDetails.getGender());
-            pet.setSize(petDetails.getSize());
-            // Color information is handled by breed and description
-            pet.setDescription(petDetails.getDescription());
-            pet.setAdoptionStatus(petDetails.getAdoptionStatus());
-            pet.setImageUrls(petDetails.getImageUrls());
-            pet.setShelter(petDetails.getShelter());
-            return petRepository.save(pet);
-        }
-        return null;
-    }
-    
-    // Delete pet
-    public boolean deletePet(Long id) {
-        if (petRepository.existsById(id)) {
-            petRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-    
-    // Get pets by adoption status
-    public List<Pet> getPetsByAdoptionStatus(String status) {
-        return petRepository.findByAdoptionStatus(status);
+    // Get all pets
+    public List<Pet> getAllPets() {
+        return petRepository.findAll();
     }
     
     // Get available pets
     public List<Pet> getAvailablePets() {
-        return petRepository.findAvailablePets();
-    }
-    
-    // Get pets by shelter
-    public List<Pet> getPetsByShelter(Long shelterId) {
-        return petRepository.findByShelterId(shelterId);
-    }
-    
-    // Search pets by name
-    public List<Pet> searchPetsByName(String name) {
-        return petRepository.findByNameContainingIgnoreCase(name);
+        return petRepository.findByAvailableTrue();
     }
     
     // Get pets by species
@@ -84,13 +42,88 @@ public class PetService {
         return petRepository.findBySpecies(species);
     }
     
-    // Get pets by breed
-    public List<Pet> getPetsByBreed(String breed) {
+    // Get available pets by species
+    public List<Pet> getAvailablePetsBySpecies(String species) {
+        return petRepository.findBySpeciesAndAvailableTrue(species);
+    }
+    
+    // Search pets by breed
+    public List<Pet> searchPetsByBreed(String breed) {
         return petRepository.findByBreedContainingIgnoreCase(breed);
+    }
+    
+    // Search pets by name
+    public List<Pet> searchPetsByName(String name) {
+        return petRepository.findByNameContainingIgnoreCase(name);
+    }
+    
+    // Get pets by shelter
+    public List<Pet> getPetsByShelter(Shelter shelter) {
+        return petRepository.findByShelter(shelter);
+    }
+    
+    // Get available pets by shelter
+    public List<Pet> getAvailablePetsByShelter(Shelter shelter) {
+        return petRepository.findByShelterAndAvailableTrue(shelter);
     }
     
     // Get pets by age range
     public List<Pet> getPetsByAgeRange(Integer minAge, Integer maxAge) {
-        return petRepository.findByAgeBetween(minAge, maxAge);
+        return petRepository.findByAgeRange(minAge, maxAge);
+    }
+    
+    // Get recent available pets
+    public List<Pet> getRecentAvailablePets() {
+        return petRepository.findRecentAvailablePets();
+    }
+    
+    // Count available pets by species
+    public long countAvailablePetsBySpecies(String species) {
+        return petRepository.countAvailableBySpecies(species);
+    }
+    
+    // Update pet
+    public Pet updatePet(Long id, Pet petDetails) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pet not found with id: " + id));
+        
+        pet.setName(petDetails.getName());
+        pet.setSpecies(petDetails.getSpecies());
+        pet.setBreed(petDetails.getBreed());
+        pet.setGender(petDetails.getGender());
+        pet.setAge(petDetails.getAge());
+        pet.setColor(petDetails.getColor());
+        pet.setSize(petDetails.getSize());
+        pet.setWeight(petDetails.getWeight());
+        pet.setDescription(petDetails.getDescription());
+        pet.setHealthStatus(petDetails.getHealthStatus());
+        pet.setVaccinationStatus(petDetails.getVaccinationStatus());
+        pet.setImage(petDetails.getImage());
+        pet.setAvailable(petDetails.getAvailable());
+        pet.setAdoptionFee(petDetails.getAdoptionFee());
+        pet.setShelter(petDetails.getShelter());
+        
+        return petRepository.save(pet);
+    }
+    
+    // Mark pet as adopted
+    public Pet markPetAsAdopted(Long id) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pet not found with id: " + id));
+        pet.setAvailable(false);
+        return petRepository.save(pet);
+    }
+    
+    // Mark pet as available
+    public Pet markPetAsAvailable(Long id) {
+        Pet pet = petRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pet not found with id: " + id));
+        pet.setAvailable(true);
+        return petRepository.save(pet);
+    }
+    
+    // Delete pet
+    public void deletePet(Long id) {
+        petRepository.deleteById(id);
     }
 }

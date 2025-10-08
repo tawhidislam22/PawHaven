@@ -1,234 +1,132 @@
 package com.pawhaven.backend.controller;
 
 import com.pawhaven.backend.model.User;
+import com.pawhaven.backend.model.UserRole;
 import com.pawhaven.backend.service.UserService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*") // Configure this for your frontend URL in production
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    // POST - Register new user
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody User user) {
-        try {
-            User createdUser = userService.createUser(user);
-            // Remove password from response for security
-            createdUser.setPassword(null);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "success", true,
-                "message", "User registered successfully",
-                "user", createdUser
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Registration failed: " + e.getMessage()
-            ));
-        }
+    // Register user (new endpoint)
+    @PostMapping("/api/users")
+    public ResponseEntity<User> registerUser(@RequestBody User user) {
+        User savedUser = userService.saveUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
     }
 
-    // GET - Get all users
+    // Get all users
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
-        try {
-            List<User> users = userService.getAllUsers();
-            // Remove passwords from response
-            users.forEach(user -> user.setPassword(null));
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "users", users,
-                "count", users.size()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve users: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    // GET - Get user by ID
+    // Get active users
+    @GetMapping("/active")
+    public ResponseEntity<List<User>> getActiveUsers() {
+        return ResponseEntity.ok(userService.getActiveUsers());
+    }
+
+    // Get user by ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable Long id) {
-        try {
-            Optional<User> user = userService.getUserById(id);
-            if (user.isPresent()) {
-                User foundUser = user.get();
-                foundUser.setPassword(null); // Remove password from response
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "user", foundUser
-                ));
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve user: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET - Get user by name
-    @GetMapping("/name/{name}")
-    public ResponseEntity<?> getUserByName(@PathVariable String name) {
-        try {
-            Optional<User> user = userService.getUserByName(name);
-            if (user.isPresent()) {
-                User foundUser = user.get();
-                foundUser.setPassword(null); // Remove password from response
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "user", foundUser
-                ));
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve user: " + e.getMessage()
-            ));
-        }
+    // Get user by email
+    @GetMapping("/email/{email}")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        return userService.getUserByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET - Search users by name
-    @GetMapping("/search")
-    public ResponseEntity<?> searchUsers(@RequestParam String name) {
-        try {
-            List<User> users = userService.searchUsersByName(name);
-            users.forEach(user -> user.setPassword(null));
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "users", users,
-                "count", users.size()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Search failed: " + e.getMessage()
-            ));
-        }
-    }
-
-    // GET - Get users by role
+    // Get users by role
     @GetMapping("/role/{role}")
-    public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
-        try {
-            User.Role userRole = User.Role.valueOf(role.toUpperCase());
-            List<User> users = userService.getUsersByRole(userRole);
-            users.forEach(user -> user.setPassword(null));
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "users", users,
-                "count", users.size()
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Invalid role: " + role
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Failed to retrieve users: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
+        return ResponseEntity.ok(userService.getUsersByRole(role));
     }
 
-    // PUT - Update user
+    // Search users by name
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsersByName(@RequestParam String name) {
+        return ResponseEntity.ok(userService.searchUsersByName(name));
+    }
+
+    // Get recent users
+    @GetMapping("/recent")
+    public ResponseEntity<List<User>> getRecentUsers() {
+        return ResponseEntity.ok(userService.getRecentUsers());
+    }
+
+    // Check if email exists
+    @GetMapping("/exists/{email}")
+    public ResponseEntity<Boolean> emailExists(@PathVariable String email) {
+        return ResponseEntity.ok(userService.emailExists(email));
+    }
+
+    // Count users by role
+    @GetMapping("/count/role/{role}")
+    public ResponseEntity<Long> countUsersByRole(@PathVariable UserRole role) {
+        return ResponseEntity.ok(userService.countUsersByRole(role));
+    }
+
+    // Create user (original endpoint)
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User savedUser = userService.saveUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+    }
+
+    // Update user
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody User userDetails) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
         try {
-            User updatedUser = userService.updateUser(id, userDetails);
-            updatedUser.setPassword(null); // Remove password from response
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User updated successfully",
-                "user", updatedUser
-            ));
+            User updatedUser = userService.updateUser(id, user);
+            return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Update failed: " + e.getMessage()
-            ));
         }
     }
 
-    // DELETE - Delete user
+    // Activate user
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<User> activateUser(@PathVariable Long id) {
+        try {
+            User user = userService.activateUser(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Deactivate user
+    @PutMapping("/{id}/deactivate")
+    public ResponseEntity<User> deactivateUser(@PathVariable Long id) {
+        try {
+            User user = userService.deactivateUser(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Delete user
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        try {
-            userService.deleteUser(id);
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "User deleted successfully"
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Delete failed: " + e.getMessage()
-            ));
-        }
-    }
-
-    // POST - User login
-    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> loginRequest) {
-        try {
-            String usernameOrEmail = loginRequest.get("username");
-            String password = loginRequest.get("password");
-
-            if (usernameOrEmail == null || password == null) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Username/email and password are required"
-                ));
-            }
-
-            Optional<User> user = userService.authenticateUser(usernameOrEmail, password);
-            if (user.isPresent()) {
-                User authenticatedUser = user.get();
-                authenticatedUser.setPassword(null); // Remove password from response
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Login successful",
-                    "user", authenticatedUser
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "success", false,
-                    "message", "Invalid credentials"
-                ));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "success", false,
-                "message", "Login failed: " + e.getMessage()
-            ));
-        }
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }

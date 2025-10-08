@@ -11,25 +11,32 @@ import java.util.Optional;
 @Repository
 public interface ShelterRepository extends JpaRepository<Shelter, Long> {
     
-    // Find shelter by name
-    Optional<Shelter> findByName(String name);
-    
-    // Find shelters by location containing
-    List<Shelter> findByLocationContainingIgnoreCase(String location);
-    
-    // Find shelters with capacity greater than
-    List<Shelter> findByCapacityGreaterThan(Integer capacity);
-    
     // Find active shelters
     List<Shelter> findByIsActiveTrue();
     
-    // Find shelters by phone number
-    Optional<Shelter> findByPhoneNumber(String phoneNumber);
+    // Find shelter by name
+    Optional<Shelter> findByName(String name);
     
-    // Find shelters by email
+    // Find shelters by name containing
+    List<Shelter> findByNameContainingIgnoreCase(String name);
+    
+    // Find shelters by city
+    List<Shelter> findByCity(String city);
+    
+    // Find shelters by city and active status
+    List<Shelter> findByCityAndIsActiveTrue(String city);
+    
+    // Find shelters by state
+    List<Shelter> findByState(String state);
+    
+    // Find shelter by email
     Optional<Shelter> findByEmail(String email);
     
-    // Custom query to find shelters with available capacity
-    @Query("SELECT s FROM Shelter s WHERE s.capacity > (SELECT COUNT(p) FROM Pet p WHERE p.shelter.id = s.id AND p.adoptionStatus = 'AVAILABLE')")
-    List<Shelter> findSheltersWithAvailableCapacity();
+    // Custom query to find shelters with capacity
+    @Query("SELECT s FROM Shelter s WHERE s.capacity >= :minCapacity AND s.isActive = true")
+    List<Shelter> findByMinCapacity(Integer minCapacity);
+    
+    // Custom query to count total capacity
+    @Query("SELECT SUM(s.capacity) FROM Shelter s WHERE s.isActive = true")
+    Long getTotalCapacity();
 }

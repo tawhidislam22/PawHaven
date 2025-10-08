@@ -4,11 +4,13 @@ import com.pawhaven.backend.model.Shelter;
 import com.pawhaven.backend.repository.ShelterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class ShelterService {
     
     @Autowired
@@ -19,51 +21,14 @@ public class ShelterService {
         return shelterRepository.save(shelter);
     }
     
-    // Get all shelters
-    public List<Shelter> getAllShelters() {
-        return shelterRepository.findAll();
-    }
-    
     // Get shelter by ID
     public Optional<Shelter> getShelterById(Long id) {
         return shelterRepository.findById(id);
     }
     
-    // Update shelter
-    public Shelter updateShelter(Long id, Shelter shelterDetails) {
-        Optional<Shelter> optionalShelter = shelterRepository.findById(id);
-        if (optionalShelter.isPresent()) {
-            Shelter shelter = optionalShelter.get();
-            shelter.setName(shelterDetails.getName());
-            shelter.setAddress(shelterDetails.getAddress());
-            shelter.setPhoneNumber(shelterDetails.getPhoneNumber());
-            shelter.setEmail(shelterDetails.getEmail());
-            shelter.setCapacity(shelterDetails.getCapacity());
-            shelter.setDescription(shelterDetails.getDescription());
-            shelter.setWebsiteUrl(shelterDetails.getWebsiteUrl());
-            shelter.setIsActive(shelterDetails.getIsActive());
-            return shelterRepository.save(shelter);
-        }
-        return null;
-    }
-    
-    // Delete shelter
-    public boolean deleteShelter(Long id) {
-        if (shelterRepository.existsById(id)) {
-            shelterRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-    
-    // Get shelter by name
-    public Optional<Shelter> getShelterByName(String name) {
-        return shelterRepository.findByName(name);
-    }
-    
-    // Search shelters by location
-    public List<Shelter> searchSheltersByLocation(String location) {
-        return shelterRepository.findByLocationContainingIgnoreCase(location);
+    // Get all shelters
+    public List<Shelter> getAllShelters() {
+        return shelterRepository.findAll();
     }
     
     // Get active shelters
@@ -71,9 +36,29 @@ public class ShelterService {
         return shelterRepository.findByIsActiveTrue();
     }
     
-    // Get shelters with available capacity
-    public List<Shelter> getSheltersWithAvailableCapacity() {
-        return shelterRepository.findSheltersWithAvailableCapacity();
+    // Get shelter by name
+    public Optional<Shelter> getShelterByName(String name) {
+        return shelterRepository.findByName(name);
+    }
+    
+    // Search shelters by name
+    public List<Shelter> searchSheltersByName(String name) {
+        return shelterRepository.findByNameContainingIgnoreCase(name);
+    }
+    
+    // Get shelters by city
+    public List<Shelter> getSheltersByCity(String city) {
+        return shelterRepository.findByCity(city);
+    }
+    
+    // Get active shelters by city
+    public List<Shelter> getActiveSheltersByCity(String city) {
+        return shelterRepository.findByCityAndIsActiveTrue(city);
+    }
+    
+    // Get shelters by state
+    public List<Shelter> getSheltersByState(String state) {
+        return shelterRepository.findByState(state);
     }
     
     // Get shelter by email
@@ -81,8 +66,55 @@ public class ShelterService {
         return shelterRepository.findByEmail(email);
     }
     
-    // Get shelter by phone number
-    public Optional<Shelter> getShelterByPhoneNumber(String phoneNumber) {
-        return shelterRepository.findByPhoneNumber(phoneNumber);
+    // Get shelters by minimum capacity
+    public List<Shelter> getSheltersByMinCapacity(Integer minCapacity) {
+        return shelterRepository.findByMinCapacity(minCapacity);
+    }
+    
+    // Get total capacity
+    public Long getTotalCapacity() {
+        return shelterRepository.getTotalCapacity();
+    }
+    
+    // Update shelter
+    public Shelter updateShelter(Long id, Shelter shelterDetails) {
+        Shelter shelter = shelterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Shelter not found with id: " + id));
+        
+        shelter.setName(shelterDetails.getName());
+        shelter.setContactNumber(shelterDetails.getContactNumber());
+        shelter.setEmail(shelterDetails.getEmail());
+        shelter.setAddress(shelterDetails.getAddress());
+        shelter.setCity(shelterDetails.getCity());
+        shelter.setState(shelterDetails.getState());
+        shelter.setCountry(shelterDetails.getCountry());
+        shelter.setZipCode(shelterDetails.getZipCode());
+        shelter.setWebsite(shelterDetails.getWebsite());
+        shelter.setDescription(shelterDetails.getDescription());
+        shelter.setCapacity(shelterDetails.getCapacity());
+        shelter.setIsActive(shelterDetails.getIsActive());
+        
+        return shelterRepository.save(shelter);
+    }
+    
+    // Deactivate shelter
+    public Shelter deactivateShelter(Long id) {
+        Shelter shelter = shelterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Shelter not found with id: " + id));
+        shelter.setIsActive(false);
+        return shelterRepository.save(shelter);
+    }
+    
+    // Activate shelter
+    public Shelter activateShelter(Long id) {
+        Shelter shelter = shelterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Shelter not found with id: " + id));
+        shelter.setIsActive(true);
+        return shelterRepository.save(shelter);
+    }
+    
+    // Delete shelter
+    public void deleteShelter(Long id) {
+        shelterRepository.deleteById(id);
     }
 }
