@@ -1,5 +1,6 @@
 package com.pawhaven.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,12 +16,14 @@ public class AdoptionApplication {
     @Column(name = "a_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", referencedColumnName = "u_id", nullable = false)
+    @JsonIgnoreProperties({"password", "adoptionApplications", "payments", "feedbacks", "notifications", "reports", "babysittings"})
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "pet_id", referencedColumnName = "p_id", nullable = false)
+    @JsonIgnoreProperties({"adoptionApplications", "babysittings", "shelter"})
     private Pet pet;
 
     @NotNull(message = "Status is required")

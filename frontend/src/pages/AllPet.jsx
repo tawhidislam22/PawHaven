@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Filter, Search, SlidersHorizontal, Grid, List, ChevronDown } from 'lucide-react';
-import { dummyPets } from '../data/dummyData';
+import { petAPI } from '../services/api';
 import InteractivePetCard from '../components/InteractivePetCard';
 import SearchComponent from '../components/SearchComponent';
 import { PetCardSkeleton } from '../components/LoadingSkeletons';
 
 const AllPet = () => {
-  const [pets, setPets] = useState(dummyPets);
+  const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [showFilters, setShowFilters] = useState(false);
@@ -21,10 +21,21 @@ const AllPet = () => {
   });
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    fetchPets();
   }, []);
+
+  const fetchPets = async () => {
+    setLoading(true);
+    try {
+      const response = await petAPI.getAllPets();
+      setPets(response.data);
+    } catch (error) {
+      console.error('Error fetching pets:', error);
+      alert(error.message || 'Failed to fetch pets. Please check if the backend server is running.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToWatchlist = (pet) => {
     console.log('Added to watchlist:', pet.name);
@@ -40,28 +51,24 @@ const AllPet = () => {
     }
   };
 
-  const handleSearch = (query, searchFilters) => {
-    // Filter pets based on search query and filters
-    let filteredPets = dummyPets;
-
-    if (query) {
-      filteredPets = filteredPets.filter(pet => 
-        pet.name.toLowerCase().includes(query.toLowerCase()) ||
-        pet.breed.toLowerCase().includes(query.toLowerCase()) ||
-        pet.species.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    // Apply filters
-    Object.entries(searchFilters).forEach(([key, value]) => {
-      if (value) {
-        filteredPets = filteredPets.filter(pet => 
-          pet[key] && pet[key].toLowerCase().includes(value.toLowerCase())
-        );
+  const handleSearch = async (query, searchFilters) => {
+    setLoading(true);
+    try {
+      // If there's a search query, use the search API
+      if (query) {
+        const response = await petAPI.searchPets(query, searchFilters);
+        setPets(response.data);
+      } else {
+        // Otherwise, fetch all pets with filters
+        const response = await petAPI.getAllPets(searchFilters);
+        setPets(response.data);
       }
-    });
-
-    setPets(filteredPets);
+    } catch (error) {
+      console.error('Error searching pets:', error);
+      alert('Failed to search pets. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSort = (sortOption) => {
@@ -241,7 +248,7 @@ const AllPet = () => {
                     <button
                       onClick={() => {
                         setFilters({species: '', age: '', size: '', location: '', gender: ''});
-                        setPets(dummyPets);
+                        fetchPets();
                       }}
                       className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
                     >
@@ -306,7 +313,7 @@ const AllPet = () => {
               <button
                 onClick={() => {
                   setFilters({species: '', age: '', size: '', location: '', gender: ''});
-                  setPets(dummyPets);
+                  fetchPets();
                 }}
                 className="bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700 transition-colors"
               >

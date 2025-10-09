@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FaHeart, FaCalendar, FaMapMarkerAlt, FaAward, FaShieldAlt, FaUserMd, FaArrowLeft } from 'react-icons/fa';
-import { dummyPets } from '../data/dummyData';
+import { petAPI } from '../services/api';
 
 const PetDetailPage = () => {
   const { id } = useParams();
-  const [pet] = useState(dummyPets.find(p => p.id === parseInt(id)));
+  const [pet, setPet] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+
+  useEffect(() => {
+    const fetchPetDetails = async () => {
+      setLoading(true);
+      try {
+        const response = await petAPI.getPetById(id);
+        setPet(response.data);
+      } catch (error) {
+        console.error('Error fetching pet details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPetDetails();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading pet details...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!pet) {
     return (
@@ -40,17 +68,12 @@ const PetDetailPage = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'adopted':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-blue-100 text-blue-800';
-    }
+  const getStatusColor = (available) => {
+    return available ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+  };
+
+  const getStatusText = (available) => {
+    return available ? 'Available' : 'Adopted';
   };
 
   return (
@@ -84,8 +107,8 @@ const PetDetailPage = () => {
                   <p className="text-xl text-gray-600">{pet.breed} • {getAgeDisplay(pet.age)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(pet.status)}`}>
-                    {pet.status}
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(pet.available)}`}>
+                    {getStatusText(pet.available)}
                   </span>
                   <button
                     onClick={handleWatchlistToggle}
@@ -151,7 +174,7 @@ const PetDetailPage = () => {
 
               {/* Action Buttons */}
               <div className="flex space-x-4">
-                {pet.status.toLowerCase() === 'available' && (
+                {pet.available && (
                   <Link
                     to={`/adopt/${pet.id}/apply`}
                     className="flex-1 bg-pink-600 text-white py-3 px-6 rounded-lg hover:bg-pink-700 transition-colors duration-200 text-center font-semibold"

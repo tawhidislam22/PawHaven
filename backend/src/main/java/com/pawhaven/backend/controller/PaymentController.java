@@ -97,9 +97,63 @@ public class PaymentController {
     
     // Create payment
     @PostMapping
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
-        Payment savedPayment = paymentService.savePayment(payment);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPayment);
+    public ResponseEntity<?> createPayment(@RequestBody Map<String, Object> paymentData) {
+        try {
+            System.out.println("Received payment data: " + paymentData);
+
+            // Extract user ID
+            final Long userId;
+            Object userObj = paymentData.get("user");
+            if (userObj instanceof Map) {
+                Object userIdObj = ((Map<?, ?>) userObj).get("id");
+                userId = userIdObj instanceof Number ? ((Number) userIdObj).longValue() : null;
+            } else if (userObj instanceof Number) {
+                userId = ((Number) userObj).longValue();
+            } else {
+                userId = null;
+            }
+
+            if (userId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User ID is required"));
+            }
+
+            // Fetch full User entity
+            var user = userService.getUserById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+            System.out.println("Found user: " + user.getName());
+
+            // Create new payment
+            Payment payment = new Payment();
+            payment.setUser(user);
+            
+            // Handle amount - could be Integer or Double from JSON
+            Object amountObj = paymentData.get("amount");
+            Double amount = amountObj instanceof Number ? ((Number) amountObj).doubleValue() : null;
+            payment.setAmount(amount);
+            
+            payment.setPurpose((String) paymentData.get("purpose"));
+            payment.setTranId((String) paymentData.get("tranId"));
+            payment.setPaymentMethod((String) paymentData.get("paymentMethod"));
+            payment.setCurrency((String) paymentData.get("currency"));
+            payment.setNotes((String) paymentData.get("notes"));
+
+            // Set status
+            String statusStr = (String) paymentData.get("status");
+            PaymentStatus status = statusStr != null ? PaymentStatus.valueOf(statusStr) : PaymentStatus.PENDING;
+            payment.setStatus(status);
+
+            System.out.println("Saving payment...");
+            Payment savedPayment = paymentService.savePayment(payment);
+            System.out.println("Payment saved successfully with ID: " + savedPayment.getId());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedPayment);
+        } catch (Exception e) {
+            System.err.println("Error creating payment: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
     
     // Process payment

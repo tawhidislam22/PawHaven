@@ -1,49 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaBaby, FaCalendar, FaUser, FaClock, FaMapMarkerAlt, FaCheck, FaHourglass } from 'react-icons/fa';
+import { FaBaby, FaCalendar, FaUser, FaClock, FaMapMarkerAlt, FaCheck, FaHourglass, FaSpinner } from 'react-icons/fa';
+import { babysittingAPI } from '../../services/api';
+import { useAuth } from '../../Providers/AuthProvider';
+import toast from 'react-hot-toast';
 
 const MyBabysitting = () => {
-    const bookings = [
-        {
-            id: 1,
-            petName: 'Max',
-            petType: 'Dog',
-            sitterName: 'Sarah Johnson',
-            startDate: '2024-02-15',
-            endDate: '2024-02-17',
-            duration: '3 days',
-            status: 'Confirmed',
-            location: 'Your Home',
-            price: 120,
-            specialInstructions: 'Needs medication at 8 AM and 6 PM'
-        },
-        {
-            id: 2,
-            petName: 'Luna',
-            petType: 'Cat',
-            sitterName: 'Mike Chen',
-            startDate: '2024-03-01',
-            endDate: '2024-03-03',
-            duration: '2 days', 
-            status: 'Pending',
-            location: 'Sitter\'s Home',
-            price: 80,
-            specialInstructions: 'Very shy, needs quiet environment'
-        },
-        {
-            id: 3,
-            petName: 'Buddy',
-            petType: 'Dog',
-            sitterName: 'Emma Davis',
-            startDate: '2024-01-20',
-            endDate: '2024-01-22',
-            duration: '2 days',
-            status: 'Completed',
-            location: 'Pet Daycare Center',
-            price: 100,
-            specialInstructions: 'Loves to play fetch'
-        }
-    ];
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        const fetchBookings = async () => {
+            if (!user?.id) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await babysittingAPI.getUserBookings(user.id);
+                setBookings(response.data || []);
+            } catch (error) {
+                console.error('Error fetching bookings:', error);
+                toast.error('Failed to load bookings');
+                setBookings([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBookings();
+    }, [user]);
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -63,6 +51,27 @@ const MyBabysitting = () => {
             default: return <FaClock className="text-gray-500" />;
         }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <FaSpinner className="animate-spin text-4xl text-pink-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading bookings...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-gray-600">Please log in to view your bookings.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6">
@@ -145,35 +154,35 @@ const MyBabysitting = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-xl font-bold text-gray-800">
-                                                🐾 {booking.petName} ({booking.petType})
+                                                🐾 {booking.pet?.name || 'Pet'} ({booking.pet?.species || 'Unknown'})
                                             </h3>
-                                            <p className="text-gray-600 flex items-center">
-                                                <FaUser className="mr-1" />
-                                                Sitter: {booking.sitterName}
+                                            <p className="text-gray-600 flex items-center text-sm">
+                                                <FaCalendar className="mr-1" />
+                                                Booked: {new Date(booking.bookingDate).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                                         <div className="flex items-center text-gray-600">
-                                            <FaCalendar className="mr-2 text-purple-500" />
+                                            <FaClock className="mr-2 text-blue-500" />
                                             <div>
-                                                <p className="text-sm font-medium">Duration</p>
-                                                <p className="text-xs">{booking.duration}</p>
+                                                <p className="text-sm font-medium">Start Date</p>
+                                                <p className="text-xs">{new Date(booking.startDate).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center text-gray-600">
-                                            <FaClock className="mr-2 text-blue-500" />
+                                            <FaClock className="mr-2 text-purple-500" />
                                             <div>
-                                                <p className="text-sm font-medium">Dates</p>
-                                                <p className="text-xs">{new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}</p>
+                                                <p className="text-sm font-medium">End Date</p>
+                                                <p className="text-xs">{new Date(booking.endDate).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center text-gray-600">
                                             <FaMapMarkerAlt className="mr-2 text-green-500" />
                                             <div>
                                                 <p className="text-sm font-medium">Location</p>
-                                                <p className="text-xs">{booking.location}</p>
+                                                <p className="text-xs">{booking.location || 'Not specified'}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center text-gray-600">

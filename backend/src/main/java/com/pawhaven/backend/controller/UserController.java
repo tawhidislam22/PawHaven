@@ -83,6 +83,59 @@ public class UserController {
         return ResponseEntity.ok(userService.countUsersByRole(role));
     }
 
+    // Login endpoint
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody java.util.Map<String, String> credentials) {
+        try {
+            String username = credentials.get("username"); // email
+            String password = credentials.get("password");
+            
+            System.out.println("Login attempt for user: " + username);
+            
+            // Find user by email
+            User user = userService.getUserByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            System.out.println("User found: " + user.getName());
+            
+            // Check if user is active
+            if (!user.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of(
+                            "success", false,
+                            "message", "Account is deactivated"
+                        ));
+            }
+            
+            // Verify password (simple comparison - in production use BCrypt)
+            if (!user.getPassword().equals(password)) {
+                System.out.println("Password mismatch");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(java.util.Map.of(
+                            "success", false,
+                            "message", "Invalid credentials"
+                        ));
+            }
+            
+            System.out.println("Login successful for user: " + user.getName());
+            
+            // Return success response with user data
+            return ResponseEntity.ok(java.util.Map.of(
+                    "success", true,
+                    "message", "Login successful",
+                    "user", user
+            ));
+            
+        } catch (RuntimeException e) {
+            System.err.println("Login error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(java.util.Map.of(
+                        "success", false,
+                        "message", "Invalid credentials"
+                    ));
+        }
+    }
+    
     // Create user (original endpoint)
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {

@@ -14,7 +14,7 @@ const Login = () => {
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [resetEmail, setResetEmail] = useState('');
     const [resetLoading, setResetLoading] = useState(false);
-    const { signIn, signInWithGoogle, resetPassword } = useAuth();
+    const { signIn, signInWithGoogle, resetPassword, setUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || '/dashboard';
@@ -27,10 +27,14 @@ const Login = () => {
             try {
                 const response = await userAPI.login({ username: email, password });
                 if (response.data.success) {
-                    // Store user data and token
+                    // Store user data and token in localStorage
                     localStorage.setItem('pawhaven_user', JSON.stringify(response.data.user));
                     localStorage.setItem('pawhaven_token', 'backend_auth_token');
-                    toast.success(`Welcome back, ${response.data.user.firstName}! 🐾`);
+                    
+                    // Update user in auth context with complete database user data
+                    setUser(response.data.user);
+                    
+                    toast.success(`Welcome back, ${response.data.user.name}! 🐾`);
                     navigate(from, { replace: true });
                     setLoading(false);
                     return;

@@ -1,24 +1,72 @@
-import React, { useState } from 'react';
-import { FaUser, FaEnvelope, FaCalendar, FaPaw, FaHeart, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaUser, FaEnvelope, FaCalendar, FaPaw, FaHeart, FaEdit, FaSave, FaTimes, FaSpinner } from 'react-icons/fa';
 import { useAuth } from '../Providers/AuthProvider';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { userAPI, adoptionAPI } from '../services/api';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    petsViewed: 0,
+    favorites: 0,
+    applications: 0
+  });
   const [profileData, setProfileData] = useState({
-    displayName: user?.displayName || '',
-    email: user?.email || '',
-    phone: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
     address: '',
-    bio: '',
+    username: '',
     preferences: {
       petTypes: [],
       size: '',
-      age: '',
+      agePreference: '',
       activityLevel: ''
     }
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const userData = await userAPI.getProfile(user.id);
+        setProfileData({
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          phoneNumber: userData.phoneNumber || '',
+          address: userData.address || '',
+          username: userData.username || '',
+          preferences: {
+            petTypes: userData.preferences?.petTypes || [],
+            size: userData.preferences?.size || '',
+            agePreference: userData.preferences?.agePreference || '',
+            activityLevel: userData.preferences?.activityLevel || ''
+          }
+        });
+
+        // Fetch application count for stats
+        const applications = await adoptionAPI.getUserApplications(user.id);
+        setStats(prev => ({
+          ...prev,
+          applications: applications.length
+        }));
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -39,16 +87,34 @@ const ProfilePage = () => {
     }
   };
 
-  const handleSave = () => {
-    // Here you would save to Firebase/database
-    console.log('Saving profile:', profileData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      await userAPI.updateProfile(user.id, profileData);
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
   };
 
-  const stats = [
-    { icon: FaPaw, label: 'Pets Viewed', value: '47' },
-    { icon: FaHeart, label: 'Favorites', value: '12' },
-    { icon: FaCalendar, label: 'Applications', value: '3' },
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex items-center justify-center">
+          <div className="text-center">
+            <FaSpinner className="animate-spin text-4xl text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  const statsDisplay = [
+    { icon: FaPaw, label: 'Pets Viewed', value: stats.petsViewed },
+    { icon: FaHeart, label: 'Favorites', value: stats.favorites },
+    { icon: FaCalendar, label: 'Applications', value: stats.applications },
   ];
 
   return (
@@ -79,11 +145,15 @@ const ProfilePage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                      {user?.displayName || 'Pet Lover'}
+                      {profileData.firstName} {profileData.lastName}
                     </h1>
                     <p className="text-gray-600 flex items-center justify-center md:justify-start">
+                      <FaUser className="mr-2" />
+                      {profileData.username}
+                    </p>
+                    <p className="text-gray-600 flex items-center justify-center md:justify-start">
                       <FaEnvelope className="mr-2" />
-                      {user?.email}
+                      {profileData.email}
                     </p>
                   </div>
                   
@@ -96,13 +166,9 @@ const ProfilePage = () => {
                   </button>
                 </div>
                 
-                <p className="text-gray-700 mb-4">
-                  {profileData.bio || "Passionate about finding loving homes for pets in need."}
-                </p>
-                
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4">
-                  {stats.map((stat, index) => (
+                  {statsDisplay.map((stat, index) => (
                     <div key={index} className="text-center">
                       <div className="flex items-center justify-center mb-2">
                         <stat.icon className="text-2xl text-blue-600 mr-2" />
@@ -133,23 +199,43 @@ const ProfilePage = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
                   {isEditing ? (
                     <input
                       type="text"
-                      name="displayName"
-                      value={profileData.displayName}
+                      name="firstName"
+                      value={profileData.firstName}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{profileData.displayName || 'Not provided'}</p>
+                    <p className="text-gray-900 font-medium">{profileData.firstName || 'Not provided'}</p>
                   )}
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={profileData.lastName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  ) : (
+                    <p className="text-gray-900 font-medium">{profileData.lastName || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                  <p className="text-gray-900 font-medium">{profileData.username}</p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <p className="text-gray-900 font-medium">{user?.email}</p>
+                  <p className="text-gray-900 font-medium">{profileData.email}</p>
                 </div>
 
                 <div>
@@ -157,14 +243,14 @@ const ProfilePage = () => {
                   {isEditing ? (
                     <input
                       type="tel"
-                      name="phone"
-                      value={profileData.phone}
+                      name="phoneNumber"
+                      value={profileData.phoneNumber}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter phone number"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{profileData.phone || 'Not provided'}</p>
+                    <p className="text-gray-900 font-medium">{profileData.phoneNumber || 'Not provided'}</p>
                   )}
                 </div>
 
@@ -225,9 +311,9 @@ const ProfilePage = () => {
                         <label key={type} className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={profileData.preferences.petTypes.includes(type)}
+                            checked={profileData.preferences?.petTypes?.includes(type) || false}
                             onChange={(e) => {
-                              const types = profileData.preferences.petTypes;
+                              const types = profileData.preferences?.petTypes || [];
                               if (e.target.checked) {
                                 setProfileData(prev => ({
                                   ...prev,
@@ -253,7 +339,7 @@ const ProfilePage = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-900">{profileData.preferences.petTypes.join(', ') || 'No preferences set'}</p>
+                    <p className="text-gray-900">{profileData.preferences?.petTypes?.length > 0 ? profileData.preferences.petTypes.join(', ') : 'No preferences set'}</p>
                   )}
                 </div>
 
@@ -262,7 +348,7 @@ const ProfilePage = () => {
                   {isEditing ? (
                     <select
                       name="preferences.size"
-                      value={profileData.preferences.size}
+                      value={profileData.preferences?.size || ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
@@ -272,7 +358,7 @@ const ProfilePage = () => {
                       <option value="large">Large (60+ lbs)</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900 capitalize">{profileData.preferences.size || 'No preference'}</p>
+                    <p className="text-gray-900 capitalize">{profileData.preferences?.size || 'No preference'}</p>
                   )}
                 </div>
 
@@ -281,7 +367,7 @@ const ProfilePage = () => {
                   {isEditing ? (
                     <select
                       name="preferences.age"
-                      value={profileData.preferences.age}
+                      value={profileData.preferences?.age || ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
@@ -292,7 +378,7 @@ const ProfilePage = () => {
                       <option value="senior">Senior</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900 capitalize">{profileData.preferences.age || 'No preference'}</p>
+                    <p className="text-gray-900 capitalize">{profileData.preferences?.age || 'No preference'}</p>
                   )}
                 </div>
 
@@ -301,7 +387,7 @@ const ProfilePage = () => {
                   {isEditing ? (
                     <select
                       name="preferences.activityLevel"
-                      value={profileData.preferences.activityLevel}
+                      value={profileData.preferences?.activityLevel || ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
@@ -311,7 +397,7 @@ const ProfilePage = () => {
                       <option value="high">High - Very active lifestyle</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900 capitalize">{profileData.preferences.activityLevel || 'No preference'}</p>
+                    <p className="text-gray-900 capitalize">{profileData.preferences?.activityLevel || 'No preference'}</p>
                   )}
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FaHeart, FaRegHeart, FaStar, FaShoppingCart, FaArrowLeft, FaShare, FaTruck, FaShieldAlt, FaUndo } from 'react-icons/fa';
-import { accessoriesData } from '../data/accessoriesData';
+import { accessoryAPI, paymentAPI } from '../services/api';
 import { useWatchlist } from '../contexts/WatchlistContext';
 import { useAuth } from '../Providers/AuthProvider';
 import toast from 'react-hot-toast';
@@ -19,14 +19,25 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const foundProduct = accessoriesData.find(p => p.id === parseInt(id));
-    if (foundProduct) {
-      setProduct(foundProduct);
-      if (foundProduct.images && foundProduct.images.length > 0) {
-        setSelectedImage(0);
+    const fetchProductDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await accessoryAPI.getAccessoryById(id);
+        if (response.data) {
+          setProduct(response.data);
+          if (response.data.images && response.data.images.length > 0) {
+            setSelectedImage(0);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product details:', error);
+        toast.error('Failed to load product details');
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    fetchProductDetails();
   }, [id]);
 
   const isWishlisted = product ? isInWatchlist(product.id) : false;
@@ -44,7 +55,7 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!user) {
       toast.error('Please login to purchase items 🔒');
       return;
@@ -55,10 +66,75 @@ const ProductDetailPage = () => {
       return;
     }
 
-    toast.success(`${quantity}x ${product.name} added to cart! 🛒`, {
-      duration: 3000,
-      icon: '✅'
-    });
+    // Auto-sync user data if needed
+    let currentUser = user;
+    let userId = currentUser.id;
+    let userEmail = currentUser.email;
+    let userName = currentUser.name || currentUser.displayName;
+
+    // If user doesn't have backend ID, fetch from database
+    if (!userId || typeof userId === 'string') {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/email/${userEmail}`);
+        if (response.ok) {
+          const backendUser = await response.json();
+          localStorage.setItem('pawhaven_user', JSON.stringify(backendUser));
+          currentUser = backendUser;
+          userId = backendUser.id;
+          userName = backendUser.name;
+          console.log('Auto-synced user with database for purchase:', backendUser);
+        } else {
+          toast.error('Please login with your PawHaven account first');
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to verify user account');
+        return;
+      }
+    }
+
+    // Create payment record for accessory purchase
+    const loadingToast = toast.loading(`Processing order for ${quantity}x ${product.name}...`);
+    
+    try {
+      const totalAmount = parseFloat(product.price) * quantity;
+      
+      const paymentData = {
+        user: {
+          id: userId,
+          email: userEmail,
+          name: userName
+        },
+        amount: totalAmount,
+        purpose: `Accessory Purchase: ${quantity}x ${product.name}`,
+        tranId: `ACC-${Date.now()}-${userId}`,
+        status: 'PENDING',
+        paymentMethod: 'ONLINE',
+        currency: 'USD',
+        notes: `Purchased ${quantity}x ${product.name} (${product.brand || 'Generic'}) - ${product.type}. Total: $${totalAmount.toFixed(2)}`
+      };
+
+      console.log('Creating purchase order:', paymentData);
+      const response = await paymentAPI.createPayment(paymentData);
+      
+      console.log('Purchase order created:', response.data);
+      toast.success(`🎉 Order placed for ${quantity}x ${product.name}! Total: $${totalAmount.toFixed(2)} - Status: PENDING`, {
+        duration: 5000,
+        icon: '✅'
+      });
+      
+      // Optionally navigate to My Payments page
+      setTimeout(() => {
+        navigate('/dashboard/my-payments');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      toast.dismiss(loadingToast);
+    }
   };
 
   const handleShare = async () => {

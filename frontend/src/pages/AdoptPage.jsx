@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FaSearch, FaFilter, FaBars } from 'react-icons/fa';
-import { dummyPets } from '../data/dummyData';
+import { petAPI } from '../services/api';
 import PetCard from '../components/PetCard';
 
 const AdoptPage = () => {
-  const [pets] = useState(dummyPets);
+  const [pets, setPets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     species: '',
@@ -13,6 +14,22 @@ const AdoptPage = () => {
     age: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    fetchPets();
+  }, []);
+
+  const fetchPets = async () => {
+    setLoading(true);
+    try {
+      const response = await petAPI.getAllPets();
+      setPets(response.data);
+    } catch (error) {
+      console.error('Error fetching pets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredPets = useMemo(() => {
     return pets.filter(pet => {
@@ -70,6 +87,17 @@ const AdoptPage = () => {
     console.log('Added to watchlist:', pet.name);
     alert(`${pet.name} added to your watchlist!`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading pets...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

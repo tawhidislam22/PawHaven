@@ -8,6 +8,7 @@ import AdoptPage from '../pages/AdoptPage';
 import DonatePage from '../pages/DonatePage';
 import ProfilePage from '../pages/ProfilePage';
 import AccessoriesPage from '../pages/AccessoriesPage';
+import UserDebugPage from '../pages/UserDebugPage';
 import ProductDetailPage from '../pages/ProductDetailPage';
 import PetDetailPage from '../pages/PetDetailPage';
 import AdoptionApplicationPage from '../pages/AdoptionApplicationPage';
@@ -35,6 +36,10 @@ import MyNotifications from '../pages/dashboard/MyNotifications';
 import MyBabysitting from '../pages/dashboard/MyBabysitting';
 import Payment from '../pages/dashboard/Payment';
 import PaymentHistory from '../pages/dashboard/PaymentHistory';
+
+// Dashboard Pages - Admin
+import AdminPayments from '../pages/dashboard/AdminPayments';
+import AdminApplications from '../pages/dashboard/AdminApplications';
 
 
 const router = createBrowserRouter([
@@ -66,6 +71,10 @@ const router = createBrowserRouter([
             {
                 path:'/donate',
                 element: <DonatePage />
+            },
+            {
+                path: '/debug',
+                element: <UserDebugPage />
             },
             {
                 path: '/accessories',
@@ -163,10 +172,28 @@ const router = createBrowserRouter([
             {
                 path: 'reports',
                 element: <ReportsManagement />
+            },
+            // Admin Panel Routes
+            {
+                path: 'admin-payments',
+                element: <AdminPayments />
+            },
+            {
+                path: 'admin-applications',
+                element: <AdminApplications />
             }
         ]
     }
-]);
+], {
+    future: {
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+        v7_fetcherPersist: true,
+        v7_normalizeFormMethod: true,
+        v7_partialHydration: true,
+        v7_skipActionErrorRevalidation: true,
+    }
+});
 
 export default router;
 

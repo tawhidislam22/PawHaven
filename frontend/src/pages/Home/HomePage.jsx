@@ -3,18 +3,35 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight, FaHeart, FaUsers, FaAward, FaChartLine, FaPaw, FaHome, FaShieldAlt, FaPlay } from 'react-icons/fa';
 import { ArrowRight, Heart, Users, Award, BarChart3, Home, Shield, Play } from 'lucide-react';
-import { dummyPets, testimonials, stats } from '../../data/dummyData';
+import { petAPI } from '../../services/api';
+import { testimonials, stats } from '../../data/dummyData';
 
 const HomePage = () => {
-  const [featuredPets] = useState(dummyPets.slice(0, 8));
+  const [featuredPets, setFeaturedPets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
+    fetchFeaturedPets();
   }, []);
+
+  const fetchFeaturedPets = async () => {
+    setLoading(true);
+    try {
+      const response = await petAPI.getFeaturedPets(8);
+      setFeaturedPets(response.data);
+    } catch (error) {
+      console.error('Error fetching featured pets:', error);
+      // If featured pets endpoint doesn't work, get first 8 pets
+      try {
+        const response = await petAPI.getAllPets();
+        setFeaturedPets(response.data.slice(0, 8));
+      } catch (err) {
+        console.error('Error fetching pets:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddToWatchlist = (pet) => {
     console.log('Added to watchlist:', pet.name);

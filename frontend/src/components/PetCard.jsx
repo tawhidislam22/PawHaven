@@ -6,17 +6,16 @@ const PetCard = ({ pet, onAddToWatchlist, isInWatchlist = false }) => {
   const [, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-lg';
-      case 'pending':
-        return 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg';
-      case 'adopted':
-        return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg';
-      default:
-        return 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white shadow-lg';
+  const getStatusColor = (available) => {
+    if (available === true || available === 'true') {
+      return 'bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-lg';
+    } else {
+      return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg';
     }
+  };
+
+  const getStatusText = (available) => {
+    return available === true || available === 'true' ? 'Available' : 'Adopted';
   };
 
   const getAgeDisplay = (ageInMonths) => {
@@ -93,8 +92,8 @@ const PetCard = ({ pet, onAddToWatchlist, isInWatchlist = false }) => {
 
         {/* Status Badge */}
         <div className="absolute top-3 left-3">
-          <span className={`px-3 py-1 text-xs font-bold rounded-full backdrop-blur-md ${getStatusColor(pet.status)}`}>
-            {pet.status}
+          <span className={`px-3 py-1 text-xs font-bold rounded-full backdrop-blur-md ${getStatusColor(pet.available)}`}>
+            {getStatusText(pet.available)}
           </span>
         </div>
 
@@ -174,7 +173,7 @@ const PetCard = ({ pet, onAddToWatchlist, isInWatchlist = false }) => {
             <FaEye className="h-3 w-3" />
             <span>View Details</span>
           </Link>
-          {pet.status.toLowerCase() === 'available' && (
+          {pet.available && (
             <Link
               to={`/adopt/${pet.id}`}
               className="flex-1 bg-white text-pink-600 border-2 border-pink-200 py-2.5 px-4 rounded-xl hover:bg-pink-50 hover:border-pink-300 transition-all duration-300 text-center text-sm font-semibold hover:scale-105 flex items-center justify-center space-x-2 group"

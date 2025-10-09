@@ -10,7 +10,7 @@ import SocialLogin from "../../components/shared/SocialLogin";
 import { useAuth } from "../../Providers/AuthProvider";
 
 const Register = () => {
-    const { createUser, updateUserProfile } = useAuth();
+    const { createUser, updateUserProfile, setUser } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -94,9 +94,28 @@ const Register = () => {
             console.log('Backend response:', dbResponse.data);
 
             if (dbResponse.data && dbResponse.data.success) {
-                toast.success(`Welcome to PawHaven, ${dbResponse.data.user.name}! 🐾 Registration successful!`);
-                reset();
-                navigate('/login'); // Redirect to login page after successful registration
+                // Fetch the complete user data from database to ensure we have the ID
+                const loginResponse = await userAPI.login({ 
+                    username: data.email, 
+                    password: data.password 
+                });
+                
+                if (loginResponse.data.success) {
+                    // Store complete user data with ID in localStorage
+                    localStorage.setItem('pawhaven_user', JSON.stringify(loginResponse.data.user));
+                    localStorage.setItem('pawhaven_token', 'backend_auth_token');
+                    
+                    // Update user in auth context with complete database user data
+                    setUser(loginResponse.data.user);
+                    
+                    toast.success(`Welcome to PawHaven, ${loginResponse.data.user.name}! 🐾`);
+                    reset();
+                    navigate('/dashboard'); // Redirect to dashboard after registration
+                } else {
+                    toast.success('Registration successful! Please login.');
+                    reset();
+                    navigate('/login');
+                }
             } else {
                 throw new Error(dbResponse.data?.message || 'Registration failed');
             }

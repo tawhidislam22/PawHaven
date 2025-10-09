@@ -1,54 +1,96 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FaCreditCard, FaCalendar, FaCheck, FaHourglass } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaCreditCard, FaCalendar, FaCheck, FaHourglass, FaSpinner } from 'react-icons/fa';
+import { paymentAPI } from '../../services/api';
+import { useAuth } from '../../Providers/AuthProvider';
+import toast from 'react-hot-toast';
 
 const MyPayments = () => {
-    const payments = [
-        {
-            id: 1,
-            type: 'Adoption Fee',
-            petName: 'Max',
-            amount: 150,
-            date: '2024-01-15',
-            status: 'Completed',
-            transactionId: 'TXN-001'
-        },
-        {
-            id: 2,
-            type: 'Donation',
-            amount: 50,
-            date: '2024-02-01',
-            status: 'Completed',
-            transactionId: 'TXN-002'
-        },
-        {
-            id: 3,
-            type: 'Pet Supplies',
-            amount: 75,
-            date: '2024-02-15',
-            status: 'Pending',
-            transactionId: 'TXN-003'
-        }
-    ];
+    const [payments, setPayments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchPayments = async () => {
+            if (!user?.id) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await paymentAPI.getUserPayments(user.id);
+                setPayments(response.data || []);
+            } catch (error) {
+                console.error('Error fetching payments:', error);
+                toast.error('Failed to load payment history');
+                setPayments([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPayments();
+    }, [user]);
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'Completed': return 'bg-green-100 text-green-800';
-            case 'Pending': return 'bg-yellow-100 text-yellow-800';
-            case 'Failed': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+        const statusUpper = status?.toUpperCase();
+        switch (statusUpper) {
+            case 'COMPLETED':
+            case 'SUCCESS':
+                return 'bg-green-100 text-green-800';
+            case 'PENDING':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'FAILED':
+            case 'REFUNDED':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
 
     const getStatusIcon = (status) => {
-        switch (status) {
-            case 'Completed': return <FaCheck className="text-green-500" />;
-            case 'Pending': return <FaHourglass className="text-yellow-500" />;
-            default: return <FaCreditCard className="text-gray-500" />;
+        const statusUpper = status?.toUpperCase();
+        switch (statusUpper) {
+            case 'COMPLETED':
+            case 'SUCCESS':
+                return <FaCheck className="text-green-500" />;
+            case 'PENDING':
+                return <FaHourglass className="text-yellow-500" />;
+            case 'FAILED':
+            case 'REFUNDED':
+                return <FaCreditCard className="text-red-500" />;
+            default:
+                return <FaCreditCard className="text-gray-500" />;
         }
     };
 
-    const totalPaid = payments.filter(p => p.status === 'Completed').reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = payments
+        .filter(p => p.status?.toUpperCase() === 'COMPLETED' || p.status?.toUpperCase() === 'SUCCESS')
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <FaSpinner className="animate-spin text-4xl text-pink-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading payments...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-gray-600">Please log in to view your payments.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-amber-50 p-6">
@@ -100,18 +142,44 @@ const MyPayments = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-800">
-                                            {payment.type}
-                                            {payment.petName && <span className="text-pink-600"> - {payment.petName}</span>}
+                                            {payment.purpose || payment.paymentType || payment.type || 'Payment'}
                                         </h3>
                                         <p className="text-sm text-gray-600 flex items-center">
                                             <FaCalendar className="mr-1" />
-                                            {new Date(payment.date).toLocaleDateString()}
+                                            {payment.date ? new Date(payment.date).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            }) : new Date().toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            })}
                                         </p>
-                                        <p className="text-xs text-gray-500">ID: {payment.transactionId}</p>
+                                        <p className="text-xs text-gray-500">
+                                            Transaction ID: {payment.tranId || payment.transactionId || `PAY-${payment.id}`}
+                                        </p>
+                                        {payment.paymentMethod && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                <span className="font-medium">Method:</span> {payment.paymentMethod}
+                                            </p>
+                                        )}
+                                        {payment.currency && (
+                                            <p className="text-xs text-gray-500">
+                                                <span className="font-medium">Currency:</span> {payment.currency}
+                                            </p>
+                                        )}
+                                        {payment.notes && (
+                                            <p className="text-xs text-gray-500 italic mt-1">
+                                                "{payment.notes}"
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-2xl font-bold text-gray-800">${payment.amount}</p>
+                                    <p className="text-2xl font-bold text-gray-800">
+                                        ${payment.amount?.toFixed(2) || '0.00'}
+                                    </p>
                                     <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(payment.status)}`}>
                                         {payment.status}
                                     </span>
@@ -130,7 +198,10 @@ const MyPayments = () => {
                         <div className="text-6xl mb-4">💳</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">No Payments Yet</h2>
                         <p className="text-gray-600 mb-6">Your payment history will appear here</p>
-                        <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
+                        <button 
+                            onClick={() => navigate('/donate')}
+                            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                        >
                             Make a Donation
                         </button>
                     </motion.div>

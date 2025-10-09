@@ -56,10 +56,30 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  // Refresh user data from localStorage (useful after login/registration)
+  const refreshUser = () => {
+    const storedUser = localStorage.getItem('pawhaven_user');
+    if (storedUser) {
+      try {
+        const backendUser = JSON.parse(storedUser);
+        setUser(backendUser);
+        console.log('User data refreshed:', backendUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+  };
+
   const logout = async () => {
     setLoading(true);
     try {
+      // Clear backend user data from localStorage
+      localStorage.removeItem('pawhaven_user');
+      localStorage.removeItem('pawhaven_token');
+      
+      // Sign out from Firebase
       await signOut(auth);
+      setUser(null);
       console.log('User logged out successfully');
     } catch (error) {
       console.error('Logout error:', error);
@@ -70,8 +90,25 @@ const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check for backend user in localStorage first
+    const storedUser = localStorage.getItem('pawhaven_user');
+    if (storedUser) {
+      try {
+        const backendUser = JSON.parse(storedUser);
+        setUser(backendUser);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+      // If there's no backend user stored, use Firebase user
+      if (!storedUser && currentUser) {
+        setUser(currentUser);
+      } else if (!storedUser && !currentUser) {
+        setUser(null);
+      }
       
     //   if (currentUser) {
     //     try {
@@ -105,7 +142,9 @@ const AuthProvider = ({ children }) => {
     signInWithGoogle,
     updateUserProfile,
     resetPassword,
-    logout
+    logout,
+    refreshUser,
+    setUser
   };
 
   return (

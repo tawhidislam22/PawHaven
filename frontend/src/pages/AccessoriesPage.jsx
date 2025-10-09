@@ -1,11 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FaSearch, FaFilter, FaSort, FaHeart, FaShoppingCart } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
-import { accessoriesData, categories, priceRanges, sortOptions } from '../data/accessoriesData';
+import { categories, priceRanges, sortOptions } from '../data/accessoriesData';
 import { useWatchlist } from '../contexts/WatchlistContext';
+import { accessoryAPI } from '../services/api';
 
 const AccessoriesPage = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
@@ -14,9 +17,32 @@ const AccessoriesPage = () => {
   
   const { getWatchlistCount } = useWatchlist();
 
+  useEffect(() => {
+    fetchAccessories();
+  }, []);
+
+  const fetchAccessories = async () => {
+    setLoading(true);
+    try {
+      const response = await accessoryAPI.getActiveAccessories();
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching accessories:', error);
+      try {
+        // Fallback to all accessories if active endpoint fails
+        const response = await accessoryAPI.getAllAccessories();
+        setProducts(response.data);
+      } catch (err) {
+        console.error('Error fetching all accessories:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter and sort products
   const filteredProducts = useMemo(() => {
-    let filtered = accessoriesData;
+    let filtered = products;
 
     // Filter by search term
     if (searchTerm) {
@@ -62,7 +88,7 @@ const AccessoriesPage = () => {
     }
 
     return filtered;
-  }, [searchTerm, selectedCategory, selectedPriceRange, sortBy]);
+  }, [products, searchTerm, selectedCategory, selectedPriceRange, sortBy]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -70,6 +96,17 @@ const AccessoriesPage = () => {
     setSelectedPriceRange('all');
     setSortBy('featured');
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-pink-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading accessories...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-cyan-50">

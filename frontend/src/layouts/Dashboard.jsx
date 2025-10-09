@@ -1,25 +1,12 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Providers/AuthProvider';
-import useAxiosSecure from '../hooks/useAxiosSecure';
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { FaHome, FaList, FaUserFriends, FaBox, FaClipboardList, FaUsers, FaUserCircle, FaCreditCard, FaHistory, FaBoxOpen, FaBars, FaTimes, FaSignOutAlt, FaHeart, FaBell, FaBaby, FaChartLine, FaStar } from 'react-icons/fa';
+import { FaHome, FaList, FaUserFriends, FaBox, FaClipboardList, FaUsers, FaUserCircle, FaCreditCard, FaHistory, FaBoxOpen, FaBars, FaTimes, FaSignOutAlt, FaHeart, FaBell, FaBaby, FaChartLine, FaStar, FaShieldAlt } from 'react-icons/fa';
 
 const Dashboard = () => {
-    const { user, logout } = useAuth();
-    const axiosSecure = useAxiosSecure();
+    const { user, logout, loading } = useAuth();
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
-
-    // Fetch user data including role
-    const { data: userData, isLoading } = useQuery({
-        queryKey: ['user', user?.email],
-        enabled: !!user?.email,
-        queryFn: async () => {
-            const res = await axiosSecure.get(`/users/${user.email}`);
-            return res.data;
-        }
-    });
 
     const handleLogout = async () => {
         try {
@@ -32,7 +19,14 @@ const Dashboard = () => {
         }
     };
 
-    const userRole = userData?.role;
+    // Get user role directly from user object (stored in localStorage after login)
+    const userRole = user?.role || 'USER';
+
+    // Admin Panel Menu Items - For managing applications and payments
+    const adminPanelMenu = [
+        { to: '/dashboard/admin-applications', icon: <FaClipboardList className="text-purple-500" />, text: '🔒 Manage Applications' },
+        { to: '/dashboard/admin-payments', icon: <FaCreditCard className="text-green-500" />, text: '🔒 Manage Payments' },
+    ];
 
     // PawHaven Dashboard Menu Items based on ER diagram entities
     const adminMenu = [
@@ -61,7 +55,7 @@ const Dashboard = () => {
     ];
 
     const renderMenu = () => {
-        const menuItems = userRole === 'admin' ? adminMenu : userMenu;
+        const menuItems = userRole === 'ADMIN' ? [...adminPanelMenu, ...adminMenu] : userMenu;
         return [...menuItems, ...commonMenu].map((item, index) => (
             <li key={index} className="relative">
                 <NavLink
@@ -92,7 +86,7 @@ const Dashboard = () => {
         ));
     };
 
-    if (isLoading) {
+    if (!user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
                 <div className="text-center">
@@ -168,7 +162,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-white font-semibold truncate flex items-center">
-                                {user?.displayName || 'Pet Lover'} 
+                                {user?.name || user?.displayName || 'Pet Lover'} 
                                 <span className="ml-2 text-amber-300">🐾</span>
                             </p>
                             <p className="text-amber-200 text-sm truncate">
@@ -180,7 +174,7 @@ const Dashboard = () => {
                                         <div key={i} className="w-1 h-1 bg-amber-400 rounded-full animate-pulse" style={{animationDelay: `${i * 0.2}s`}}></div>
                                     ))}
                                 </div>
-                                <span className="text-xs text-amber-300 ml-2">Online</span>
+                                <span className="text-xs text-amber-300 ml-2 capitalize">{user?.role?.toLowerCase() || 'user'}</span>
                             </div>
                         </div>
                     </div>

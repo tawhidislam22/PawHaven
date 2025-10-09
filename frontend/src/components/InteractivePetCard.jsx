@@ -19,17 +19,16 @@ const InteractivePetCard = ({
     triggerOnce: true
   });
 
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'available':
-        return 'bg-gradient-to-r from-emerald-400 to-green-500 text-white';
-      case 'pending':
-        return 'bg-gradient-to-r from-amber-400 to-orange-500 text-white';
-      case 'adopted':
-        return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white';
-      default:
-        return 'bg-gradient-to-r from-blue-400 to-cyan-500 text-white';
+  const getStatusColor = (available) => {
+    if (available === true || available === 'true') {
+      return 'bg-gradient-to-r from-emerald-400 to-green-500 text-white';
+    } else {
+      return 'bg-gradient-to-r from-gray-400 to-gray-500 text-white';
     }
+  };
+
+  const getStatusText = (available) => {
+    return available === true || available === 'true' ? 'Available' : 'Adopted';
   };
 
   const getAgeDisplay = (ageInMonths) => {
@@ -188,9 +187,9 @@ const InteractivePetCard = ({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className={`px-3 py-1 text-xs font-bold rounded-full backdrop-blur-md shadow-lg ${getStatusColor(pet.status)}`}
+                className={`px-3 py-1 text-xs font-bold rounded-full backdrop-blur-md shadow-lg ${getStatusColor(pet.available)}`}
               >
-                {pet.status}
+                {getStatusText(pet.available)}
               </motion.span>
             </div>
 
@@ -319,7 +318,7 @@ const InteractivePetCard = ({
                 </div>
               </motion.div>
               
-              {pet.status.toLowerCase() === 'available' && (
+              {pet.available && (
                 <motion.div
                   className="flex-1"
                   whileHover={{ scale: 1.02 }}

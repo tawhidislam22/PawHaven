@@ -143,9 +143,39 @@ export const adoptionAPI = {
     return api.get(`/adoption-applications/${id}`);
   },
 
+  // Get user's adoption applications
+  getUserApplications: (userId) => {
+    return api.get(`/adoption-applications/user/${userId}`);
+  },
+
+  // Get user's applications by status
+  getUserApplicationsByStatus: (userId, status) => {
+    return api.get(`/adoption-applications/user/${userId}/status/${status}`);
+  },
+
+  // Get applications for a specific pet
+  getPetApplications: (petId) => {
+    return api.get(`/adoption-applications/pet/${petId}`);
+  },
+
+  // Get applications by status
+  getApplicationsByStatus: (status) => {
+    return api.get(`/adoption-applications/status/${status}`);
+  },
+
+  // Get recent applications
+  getRecentApplications: () => {
+    return api.get('/adoption-applications/recent');
+  },
+
+  // Check if user has applied for a pet
+  checkUserPetApplication: (userId, petId) => {
+    return api.get(`/adoption-applications/check/user/${userId}/pet/${petId}`);
+  },
+
   // Update application status (admin only)
-  updateApplicationStatus: (id, status) => {
-    return api.put(`/adoption-applications/${id}/status`, { status });
+  updateApplicationStatus: (id, statusData) => {
+    return api.put(`/adoption-applications/${id}/status`, statusData);
   },
 
   // Get all applications (admin only)
@@ -155,7 +185,7 @@ export const adoptionAPI = {
       if (value) params.append(key, value);
     });
     
-    return api.get(`/adoption-applications?${params.toString()}`);
+    return api.get(`/adoption-applications${params.toString() ? '?' + params.toString() : ''}`);
   },
 };
 
@@ -179,6 +209,49 @@ export const donationAPI = {
   // Process payment (would integrate with payment gateway)
   processPayment: (paymentData) => {
     return api.post('/donations/payment', paymentData);
+  },
+};
+
+// Accessories API endpoints
+export const accessoryAPI = {
+  // Get all accessories
+  getAllAccessories: () => {
+    return api.get('/accessories');
+  },
+
+  // Get accessory by ID
+  getAccessoryById: (id) => {
+    return api.get(`/accessories/${id}`);
+  },
+
+  // Get accessories by type
+  getAccessoriesByType: (type) => {
+    return api.get(`/accessories/type/${type}`);
+  },
+
+  // Search accessories
+  searchAccessories: (name) => {
+    return api.get(`/accessories/search?name=${encodeURIComponent(name)}`);
+  },
+
+  // Get active accessories
+  getActiveAccessories: () => {
+    return api.get('/accessories/active');
+  },
+
+  // Create accessory (admin only)
+  createAccessory: (accessoryData) => {
+    return api.post('/accessories', accessoryData);
+  },
+
+  // Update accessory (admin only)
+  updateAccessory: (id, accessoryData) => {
+    return api.put(`/accessories/${id}`, accessoryData);
+  },
+
+  // Delete accessory (admin only)
+  deleteAccessory: (id) => {
+    return api.delete(`/accessories/${id}`);
   },
 };
 
@@ -219,6 +292,140 @@ export const generalAPI = {
   // Mark notification as read
   markNotificationRead: (id) => {
     return api.put(`/notifications/${id}/read`);
+  },
+};
+
+// Payment API endpoints
+export const paymentAPI = {
+  // Get all payments
+  getAllPayments: () => {
+    return api.get('/payments');
+  },
+
+  // Get payment by ID
+  getPaymentById: (id) => {
+    return api.get(`/payments/${id}`);
+  },
+
+  // Get user's payments
+  getUserPayments: (userId) => {
+    return api.get(`/payments/user/${userId}`);
+  },
+
+  // Get payments by status
+  getPaymentsByStatus: (status) => {
+    return api.get(`/payments/status/${status}`);
+  },
+
+  // Create payment
+  createPayment: (paymentData) => {
+    return api.post('/payments', paymentData);
+  },
+
+  // Update payment status
+  updatePaymentStatus: (id, status) => {
+    return api.put(`/payments/${id}/status`, { status });
+  },
+
+  // Delete payment
+  deletePayment: (id) => {
+    return api.delete(`/payments/${id}`);
+  },
+};
+
+// Babysitting API endpoints
+export const babysittingAPI = {
+  // Get all babysitting bookings
+  getAllBookings: () => {
+    return api.get('/babysitting');
+  },
+
+  // Get booking by ID
+  getBookingById: (id) => {
+    return api.get(`/babysitting/${id}`);
+  },
+
+  // Get user's bookings
+  getUserBookings: (userId) => {
+    return api.get(`/babysitting/user/${userId}`);
+  },
+
+  // Get bookings by pet
+  getPetBookings: (petId) => {
+    return api.get(`/babysitting/pet/${petId}`);
+  },
+
+  // Get bookings by status
+  getBookingsByStatus: (status) => {
+    return api.get(`/babysitting/status/${status}`);
+  },
+
+  // Create booking
+  createBooking: (bookingData) => {
+    return api.post('/babysitting', bookingData);
+  },
+
+  // Update booking
+  updateBooking: (id, bookingData) => {
+    return api.put(`/babysitting/${id}`, bookingData);
+  },
+
+  // Update booking status
+  updateBookingStatus: (id, status) => {
+    return api.put(`/babysitting/${id}/status`, { status });
+  },
+
+  // Delete booking
+  deleteBooking: (id) => {
+    return api.delete(`/babysitting/${id}`);
+  },
+};
+
+// Notification API endpoints
+export const notificationAPI = {
+  // Get all notifications
+  getAllNotifications: () => {
+    return api.get('/notifications');
+  },
+
+  // Get notification by ID
+  getNotificationById: (id) => {
+    return api.get(`/notifications/${id}`);
+  },
+
+  // Get user's notifications
+  getUserNotifications: (userId) => {
+    return api.get(`/notifications/user/${userId}`);
+  },
+
+  // Get unread notifications count
+  getUnreadCount: (userId) => {
+    return api.get(`/notifications/user/${userId}/unread/count`);
+  },
+
+  // Get unread notifications
+  getUnreadNotifications: (userId) => {
+    return api.get(`/notifications/user/${userId}/unread`);
+  },
+
+  // Mark notification as read
+  markAsRead: (id) => {
+    return api.put(`/notifications/${id}/read`);
+  },
+
+  // Mark all as read
+  markAllAsRead: (userId) => {
+    return api.put(`/notifications/user/${userId}/read-all`);
+  },
+
+  // Delete notification
+  deleteNotification: (id) => {
+    return api.delete(`/notifications/${id}`);
+  },
+
+  // Create notification
+  createNotification: (notificationData) => {
+    return api.post('/notifications', notificationData);
   },
 };
 

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useWatchlist } from '../contexts/WatchlistContext';
 import { useAuth } from '../Providers/AuthProvider';
 import toast from 'react-hot-toast';
+import { paymentAPI } from '../services/api';
 
 const ProductCard = ({ product, index = 0 }) => {
   const [imageLoading, setImageLoading] = useState(true);
@@ -12,8 +13,13 @@ const ProductCard = ({ product, index = 0 }) => {
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
   const { user } = useAuth();
   
-  const isWishlisted = isInWatchlist(product.id);
-  const discount = product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
+  // Map backend fields to component fields
+  const productId = product.accId || product.id;
+  const isWishlisted = isInWatchlist(productId);
+  const stockCount = product.quantity || 0;
+  const inStock = product.isActive && stockCount > 0;
+  const category = product.type || 'Accessory';
+  const discount = 0; // Backend doesn't have originalPrice
 
   const handleWatchlistToggle = (e) => {
     e.preventDefault();
@@ -25,13 +31,13 @@ const ProductCard = ({ product, index = 0 }) => {
     }
 
     if (isWishlisted) {
-      removeFromWatchlist(product.id);
+      removeFromWatchlist(productId);
     } else {
-      addToWatchlist(product);
+      addToWatchlist({ ...product, id: productId });
     }
   };
 
-  const handleBuyNow = (e) => {
+  const handleBuyNow = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -40,11 +46,68 @@ const ProductCard = ({ product, index = 0 }) => {
       return;
     }
 
-    // For now, just show a success message
-    toast.success(`${product.name} added to cart! 🛒`, {
-      duration: 3000,
-      icon: '✅'
-    });
+    // Auto-sync user data if needed (same as DonatePage)
+    let currentUser = user;
+    let userId = currentUser.id;
+    let userEmail = currentUser.email;
+    let userName = currentUser.name || currentUser.displayName;
+
+    // If user doesn't have backend ID, fetch from database
+    if (!userId || typeof userId === 'string') {
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/email/${userEmail}`);
+        if (response.ok) {
+          const backendUser = await response.json();
+          localStorage.setItem('pawhaven_user', JSON.stringify(backendUser));
+          currentUser = backendUser;
+          userId = backendUser.id;
+          userName = backendUser.name;
+          console.log('Auto-synced user with database for purchase:', backendUser);
+        } else {
+          toast.error('Please login with your PawHaven account first');
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Failed to verify user account');
+        return;
+      }
+    }
+
+    // Create payment record for accessory purchase
+    const loadingToast = toast.loading('Processing your purchase...');
+    
+    try {
+      const paymentData = {
+        user: {
+          id: userId,
+          email: userEmail,
+          name: userName
+        },
+        amount: parseFloat(product.price),
+        purpose: `Accessory Purchase: ${product.name}`,
+        tranId: `ACC-${Date.now()}-${userId}`,
+        status: 'PENDING',
+        paymentMethod: 'ONLINE',
+        currency: 'USD',
+        notes: `Purchased 1x ${product.name} (${product.brand || 'Generic'}) - ${product.type}`
+      };
+
+      console.log('Creating purchase order:', paymentData);
+      const response = await paymentAPI.createPayment(paymentData);
+      
+      console.log('Purchase order created:', response.data);
+      toast.success(`🎉 Order placed for ${product.name}! Status: PENDING`, {
+        duration: 4000,
+        icon: '✅'
+      });
+      
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      toast.dismiss(loadingToast);
+    }
   };
 
   const handleImageLoad = () => {
@@ -67,20 +130,20 @@ const ProductCard = ({ product, index = 0 }) => {
         <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden border border-gray-100">
           {/* Product Image */}
           <div className="relative overflow-hidden aspect-square">
-            {/* Discount Badge */}
-            {discount > 0 && (
+            {/* Stock Status */}
+            {!inStock && (
               <div className="absolute top-3 left-3 z-10">
-                <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-                  -{discount}%
+                <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                  Out of Stock
                 </span>
               </div>
             )}
-
-            {/* Stock Status */}
-            {!product.inStock && (
-              <div className="absolute top-3 right-14 z-10">
-                <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-                  Out of Stock
+            
+            {/* Active Badge */}
+            {product.isActive && inStock && (
+              <div className="absolute top-3 left-3 z-10">
+                <span className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                  Available
                 </span>
               </div>
             )}
@@ -141,7 +204,7 @@ const ProductCard = ({ product, index = 0 }) => {
           <div className="p-4">
             {/* Category */}
             <p className="text-xs text-pink-600 font-medium uppercase tracking-wide mb-1">
-              {product.category.replace(/([A-Z])/g, ' $1').trim()}
+              {category}
             </p>
 
             {/* Product Name */}
@@ -149,41 +212,26 @@ const ProductCard = ({ product, index = 0 }) => {
               {product.name}
             </h3>
 
-            {/* Rating */}
-            <div className="flex items-center mb-3">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar
-                    key={i}
-                    className={`text-sm ${
-                      i < Math.floor(product.rating)
-                        ? 'text-yellow-400'
-                        : 'text-gray-200'
-                    }`}
-                  />
-                ))}
+            {/* Brand */}
+            {product.brand && (
+              <div className="flex items-center mb-3">
+                <span className="text-sm text-gray-600">
+                  Brand: <span className="font-semibold">{product.brand}</span>
+                </span>
               </div>
-              <span className="text-sm text-gray-600 ml-2">
-                {product.rating} ({product.reviews})
-              </span>
-            </div>
+            )}
 
             {/* Price */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <span className="text-2xl font-bold text-gray-800">
-                  ${product.price}
+                  ${product.price?.toFixed(2) || '0.00'}
                 </span>
-                {product.originalPrice && (
-                  <span className="text-sm text-gray-500 line-through">
-                    ${product.originalPrice}
-                  </span>
-                )}
               </div>
               
-              {product.stockCount <= 5 && product.inStock && (
+              {stockCount <= 5 && inStock && (
                 <span className="text-xs text-orange-600 font-medium">
-                  Only {product.stockCount} left!
+                  Only {stockCount} left!
                 </span>
               )}
             </div>
@@ -192,15 +240,15 @@ const ProductCard = ({ product, index = 0 }) => {
             <div className="flex space-x-2">
               <button
                 onClick={handleBuyNow}
-                disabled={!product.inStock}
+                disabled={!inStock}
                 className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${
-                  product.inStock
+                  inStock
                     ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 hover:shadow-lg transform hover:scale-105'
                     : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 <FaShoppingCart className="text-sm" />
-                <span>{product.inStock ? 'Buy Now' : 'Out of Stock'}</span>
+                <span>{inStock ? 'Buy Now' : 'Out of Stock'}</span>
               </button>
             </div>
 

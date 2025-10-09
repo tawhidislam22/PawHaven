@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaHeart, FaDollarSign, FaChartLine, FaUsers } from 'react-icons/fa';
+import { paymentAPI } from '../services/api';
+import { useAuth } from '../Providers/AuthProvider';
+import toast from 'react-hot-toast';
 
 const DonatePage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [donationAmount, setDonationAmount] = useState('');
   const [donationType, setDonationType] = useState('general');
   const [isMonthly, setIsMonthly] = useState(false);
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const predefinedAmounts = [25, 50, 100, 250, 500];
 
@@ -55,20 +62,115 @@ const DonatePage = () => {
     { amount: 500, impact: 'Supports full veterinary care for 3 animals' }
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate amount
     if (!donationAmount || donationAmount <= 0) {
-      alert('Please enter a valid donation amount');
+      toast.error('Please enter a valid donation amount');
       return;
     }
 
-    // Mock donation submission
-    alert(`Thank you for your ${isMonthly ? 'monthly' : 'one-time'} donation of $${donationAmount}!`);
+    // Get user data from multiple sources
+    const storedUser = localStorage.getItem('pawhaven_user');
+    let currentUser = user;
     
-    // Reset form
-    setDonationAmount('');
-    setMessage('');
+    if (storedUser) {
+      try {
+        currentUser = JSON.parse(storedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+      }
+    }
+
+    // Check if user is logged in
+    if (!currentUser) {
+      toast.error('Please login to make a donation');
+      navigate('/login', { state: { from: '/donate' } });
+      return;
+    }
+
+    // Auto-fix user data if needed (handle both Firebase and backend users)
+    let userId = currentUser.id;
+    let userEmail = currentUser.email;
+    let userName = currentUser.name || currentUser.displayName || 'Anonymous';
+
+    // If user doesn't have backend ID (Firebase user), try to get from database
+    if (!userId || typeof userId === 'string') {
+      try {
+        // Try to fetch user from backend by email
+        const response = await fetch(`http://localhost:8080/api/users/email/${userEmail}`);
+        if (response.ok) {
+          const backendUser = await response.json();
+          if (backendUser && backendUser.id) {
+            // Update localStorage with backend user
+            localStorage.setItem('pawhaven_user', JSON.stringify(backendUser));
+            currentUser = backendUser;
+            userId = backendUser.id;
+            userName = backendUser.name;
+            console.log('Auto-synced user with database:', backendUser);
+          }
+        }
+      } catch (error) {
+        console.error('Could not fetch user from database:', error);
+      }
+    }
+
+    // Final check - if still no valid ID, ask to login
+    if (!userId || typeof userId === 'string') {
+      toast.error('Please log in to continue');
+      navigate('/login', { state: { from: '/donate' } });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Get selected donation type name
+      const selectedType = donationTypes.find(t => t.id === donationType);
+      const purposeName = selectedType ? selectedType.name : 'General Support';
+
+      // Generate unique transaction ID
+      const tranId = `DON-${Date.now()}-${userId}`;
+
+      // Prepare payment data
+      const paymentData = {
+        user: { 
+          id: userId,
+          email: userEmail,
+          name: userName
+        },
+        amount: parseFloat(donationAmount),
+        purpose: `Donation: ${purposeName}${isMonthly ? ' (Monthly)' : ''}`,
+        tranId: tranId,
+        status: 'COMPLETED', // Mark as completed immediately for donations
+        paymentMethod: 'ONLINE',
+        currency: 'USD',
+        notes: message || `Thank you for your ${isMonthly ? 'monthly' : 'one-time'} donation!`
+      };
+
+      console.log('Submitting donation:', paymentData);
+
+      // Submit to backend
+      await paymentAPI.createPayment(paymentData);
+
+      // Success notification
+      toast.success(`Thank you for your ${isMonthly ? 'monthly' : 'one-time'} donation of $${donationAmount}!`, {
+        duration: 5000,
+      });
+
+      // Reset form
+      setDonationAmount('');
+      setMessage('');
+      setDonationType('general');
+      setIsMonthly(false);
+
+    } catch (error) {
+      console.error('Error submitting donation:', error);
+      toast.error(error.response?.data?.message || 'Failed to process donation. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -214,9 +316,20 @@ const DonatePage = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-pink-700 transition-colors duration-200"
+                disabled={isSubmitting}
+                className="w-full bg-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-pink-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Donate ${donationAmount || '0'} {isMonthly ? 'Monthly' : 'Now'}
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                ) : (
+                  `Donate $${donationAmount || '0'} ${isMonthly ? 'Monthly' : 'Now'}`
+                )}
               </button>
             </form>
           </div>
